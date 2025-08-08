@@ -31,9 +31,9 @@ import { AddIcon, ChevronRightIcon, ViewIcon, EditIcon, DownloadIcon, CalendarIc
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/router';
 import DashboardLayout from '../../../../../components/layouts/DashboardLayout';
-import { useQuery, useQueryClient } from 'react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { adminService, projectService, scheduleService } from 'services/api';
-import ScheduleRequestForm from '../../../../../components/schedules/ScheduleRequestForm';
+import ScheduleRequestForm from 'components/schedules/ScheduleRequestForm';
 
 const MotionBox = motion(Box);
 

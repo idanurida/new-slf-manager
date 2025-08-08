@@ -21,7 +21,7 @@ import {
   Image
 } from '@chakra-ui/react';
 import DashboardLayout from '../../../../components/layouts/DashboardLayout';
-import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 import { formatCurrency, formatDate } from '../../../../utils/helpers';

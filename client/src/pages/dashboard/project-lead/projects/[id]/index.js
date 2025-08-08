@@ -13,7 +13,7 @@ import {
   StatNumber,
   useToast
 } from '@chakra-ui/react';
-import DashboardLayout from '../../../../../../components/layouts/DashboardLayout';
+import DashboardLayout from 'components/layouts/DashboardLayout';
 import { useRouter } from 'next/router';
 
 const ProjectDetail = () => {

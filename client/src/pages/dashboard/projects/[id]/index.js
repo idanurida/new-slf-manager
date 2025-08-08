@@ -20,7 +20,7 @@ import {
   TabPanel
 } from '@chakra-ui/react';
 import DashboardLayout from '../../../../components/layouts/DashboardLayout';
-import { useQuery } from 'react-query';
+import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useRouter } from 'next/router';
 
