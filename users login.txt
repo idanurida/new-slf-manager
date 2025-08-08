@@ -1,0 +1,8 @@
+Sekarang kamu bisa login dengan:
+
+Email	Password	Role
+admin@mock.com	123	superadmin
+projectadmin@mock.com	123	projectadmin
+inspector@mock.com	123	inspector
+client@mock.com	123	client
+user@mock.com	123	user

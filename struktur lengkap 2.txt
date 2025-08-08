@@ -1,0 +1,38 @@
+slf-one-manager/
+├── client/
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── styles/
+│   │   └── utils/
+│   ├── package.json
+│   └── next.config.js
+├── server/
+│   ├── src/
+│   │   ├── data/
+│   │   │   └── checklist_templates.json
+│   │   ├── models/
+│   │   │   ├── User.js
+│   │   │   ├── Project.js
+│   │   │   ├── Inspection.js
+│   │   │   ├── ChecklistItem.js
+│   │   │   ├── ChecklistResponse.js
+│   │   │   ├── Payment.js
+│   │   │   ├── Document.js
+│   │   │   ├── Report.js
+│   │   │   └── Notification.js
+│   │   ├── controllers/
+│   │   ├── routes/
+│   │   ├── middleware/
+│   │   ├── seeds/
+│   │   │   └── checklistTemplateSeeder.js
+│   │   ├── database/
+│   │   │   └── connection.js
+│   │   └── utils/
+│   ├── uploads/
+│   ├── package.json
+│   ├── .env.example
+│   └── src/index.js
+├── docs/
+└── README.md
