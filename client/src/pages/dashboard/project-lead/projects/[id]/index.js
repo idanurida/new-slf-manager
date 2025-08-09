@@ -20,9 +20,7 @@ import {
   AlertDescription,
 } from '@chakra-ui/react';
 // ✅ Perbaiki path import menjadi relatif
-import DashboardLayout from '../../../../../../components/layouts/DashboardLayout'; 
-import { useRouter } from 'next/router';
-
+import DashboardLayout from '../../../../../components/layouts/DashboardLayout';
 // ✅ Mock data proyek berdasarkan ID untuk lingkungan mockup
 const getMockProject = (id) => {
   const mockProjects = {
