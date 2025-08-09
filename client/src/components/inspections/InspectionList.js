@@ -23,21 +23,64 @@ import {
   VStack
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import axios from 'axios';
+// Hapus import axios
+// import axios from 'axios';
 import { useRouter } from 'next/router';
 
+// Mock data untuk pengujian frontend
+const mockUser = {
+  id: 1,
+  name: 'Inspector Mock User',
+  email: 'inspector@mock.com',
+  role: 'inspector'
+};
+
+const mockInspections = (projectId) => [
+  {
+    id: 1,
+    project_id: projectId || 1,
+    scheduled_date: '2023-07-15T10:00:00Z',
+    status: 'scheduled',
+    inspector: { id: 1, name: 'Inspector A' },
+    drafter: { id: 3, name: 'Drafter X' }
+  },
+  {
+    id: 2,
+    project_id: projectId || 1,
+    scheduled_date: '2023-07-20T14:00:00Z',
+    status: 'in_progress',
+    inspector: { id: 2, name: 'Inspector B' },
+    drafter: { id: 4, name: 'Drafter Y' }
+  },
+  {
+    id: 3,
+    project_id: projectId || 1,
+    scheduled_date: '2023-06-28T09:00:00Z',
+    status: 'completed',
+    inspector: { id: 1, name: 'Inspector A' },
+    drafter: { id: 3, name: 'Drafter X' }
+  },
+  {
+    id: 4,
+    project_id: projectId || 1,
+    scheduled_date: '2023-08-05T11:00:00Z',
+    status: 'scheduled',
+    inspector: { id: 2, name: 'Inspector B' },
+    drafter: { id: 4, name: 'Drafter Y' }
+  }
+];
+
 const InspectionList = ({ projectId }) => {
-  const [user, setUser] = useState({});
-  const [inspections, setInspections] = useState([]);
+  const [user, setUser] = useState(mockUser); // Gunakan mock user langsung
+  const [inspections, setInspections] = useState([]); // Akan diisi dengan mock data
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const toast = useToast();
   const router = useRouter();
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
-  // Fetch user data
+  // Hilangkan useEffect untuk fetchUser karena kita menggunakan mock data
+  /*
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -66,25 +109,29 @@ const InspectionList = ({ projectId }) => {
 
     fetchUser();
   }, [token, router, toast]);
+  */
 
-  // Fetch inspections data
+  // Modifikasi useEffect untuk fetchInspections agar menggunakan mock data
   useEffect(() => {
+    // Simulasi loading data
     const fetchInspections = async () => {
-      if (!projectId || !token) return;
+      // if (!projectId || !token) return; // Hapus pengecekan token
+      if (!projectId) return; // Hanya periksa projectId
       
       try {
         setLoading(true);
         
-        const res = await axios.get(`/api/projects/${projectId}/inspections`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        // Simulasi delay API call
+        await new Promise(resolve => setTimeout(resolve, 800));
         
-        setInspections(res.data);
+        // Gunakan mock data
+        setInspections(mockInspections(projectId));
+        
       } catch (err) {
-        console.error('Error fetching inspections:', err);
+        console.error('Error fetching inspections (Mock):', err);
         toast({
           title: 'Error',
-          description: 'Gagal memuat data inspeksi',
+          description: 'Gagal memuat data inspeksi (Mock)',
           status: 'error',
           duration: 5000,
           isClosable: true,
@@ -96,7 +143,7 @@ const InspectionList = ({ projectId }) => {
     };
 
     fetchInspections();
-  }, [projectId, token, toast]);
+  }, [projectId, toast]); // Hapus token dari dependency array
 
   const handleViewInspection = (inspectionId) => {
     router.push(`/dashboard/projects/${projectId}/inspections/${inspectionId}`);
@@ -159,18 +206,18 @@ const InspectionList = ({ projectId }) => {
           <Box>
             <HStack justify="space-between">
               <Heading color="blue.600">
-                Daftar Inspeksi
+                Daftar Inspeksi (Mock Mode)
               </Heading>
               <Button 
                 colorScheme="green" 
                 onClick={handleScheduleInspection}
                 size="lg"
               >
-                Jadwalkan Inspeksi Baru
+                Jadwalkan Inspeksi Baru (Mock)
               </Button>
             </HStack>
             <Text fontSize="md" color="gray.600" mt={2}>
-              Proyek: {projectId ? `ID ${projectId}` : 'Semua Proyek'}
+              Proyek: {projectId ? `ID ${projectId} (Mock)` : 'Semua Proyek (Mock)'}
             </Text>
           </Box>
 
@@ -179,14 +226,14 @@ const InspectionList = ({ projectId }) => {
             <CardBody>
               <HStack spacing={4} wrap="wrap">
                 <Input
-                  placeholder="Cari ID atau nama inspektor..."
+                  placeholder="Cari ID atau nama inspektor... (Mock)"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   width={{ base: '100%', md: '300px' }}
                 />
                 
                 <Select
-                  placeholder="Filter berdasarkan status"
+                  placeholder="Filter berdasarkan status (Mock)"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                   width={{ base: '100%', md: '200px' }}
@@ -206,7 +253,7 @@ const InspectionList = ({ projectId }) => {
                     variant="outline"
                     colorScheme="red"
                   >
-                    Reset Filter
+                    Reset Filter (Mock)
                   </Button>
                 )}
               </HStack>
@@ -220,12 +267,12 @@ const InspectionList = ({ projectId }) => {
                 <Table variant="simple">
                   <Thead>
                     <Tr>
-                      <Th>ID</Th>
-                      <Th>Tanggal Jadwal</Th>
-                      <Th>Inspektor</Th>
-                      <Th>Drafter</Th>
-                      <Th>Status</Th>
-                      <Th>Aksi</Th>
+                      <Th>ID (Mock)</Th>
+                      <Th>Tanggal Jadwal (Mock)</Th>
+                      <Th>Inspektor (Mock)</Th>
+                      <Th>Drafter (Mock)</Th>
+                      <Th>Status (Mock)</Th>
+                      <Th>Aksi (Mock)</Th>
                     </Tr>
                   </Thead>
                   <Tbody>
@@ -257,7 +304,7 @@ const InspectionList = ({ projectId }) => {
                               colorScheme="blue"
                               onClick={() => handleViewInspection(inspection.id)}
                             >
-                              Lihat Detail
+                              Lihat Detail (Mock)
                             </Button>
                           </Td>
                         </Tr>
@@ -267,8 +314,8 @@ const InspectionList = ({ projectId }) => {
                         <Td colSpan={6} textAlign="center">
                           <Text color="gray.500">
                             {searchTerm || statusFilter 
-                              ? 'Tidak ada inspeksi yang cocok dengan filter' 
-                              : 'Belum ada inspeksi yang dijadwalkan'}
+                              ? 'Tidak ada inspeksi yang cocok dengan filter (Mock)' 
+                              : 'Belum ada inspeksi yang dijadwalkan (Mock)'}
                           </Text>
                         </Td>
                       </Tr>

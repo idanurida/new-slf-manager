@@ -21,43 +21,55 @@ import {
   AlertDescription
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import axios from 'axios';
+// Hapus import axios
+// import axios from 'axios';
 
 const ApprovalForm = ({ reportId, role, currentStatus, onApprovalChange }) => {
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 
+  // Fungsi mock untuk menyetujui laporan
   const handleApprove = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      // Simulasi delay API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const response = await axios.post(
-        `/api/approvals/reports/${reportId}/approve/${role}`,
-        { comment },
-        {
-          headers: { Authorization: `Bearer ${token}` }
+      // Buat data mock untuk response
+      const mockResponse = {
+        data: {
+          message: 'Laporan berhasil disetujui (Mock)',
+          approval: {
+            id: Math.floor(Math.random() * 1000),
+            report_id: reportId,
+            role: role,
+            status: 'approved',
+            comment: comment,
+            approved_at: new Date().toISOString(),
+            approved_by: 'Mock User'
+          }
         }
-      );
+      };
       
       toast({
         title: 'Laporan Disetujui',
-        description: response.data.message,
+        description: mockResponse.data.message,
         status: 'success',
         duration: 3000,
         isClosable: true,
         position: 'top-right'
       });
       
+      // Panggil callback dengan data mock jika disediakan
       if (onApprovalChange) {
-        onApprovalChange(response.data.approval);
+        onApprovalChange(mockResponse.data.approval);
       }
     } catch (error) {
-      console.error('Approval error:', error);
+      console.error('Approval error (Mock):', error);
       toast({
         title: 'Error',
-        description: error.response?.data?.error || 'Gagal menyetujui laporan',
+        description: 'Gagal menyetujui laporan (Mock)',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -68,36 +80,47 @@ const ApprovalForm = ({ reportId, role, currentStatus, onApprovalChange }) => {
     }
   };
 
+  // Fungsi mock untuk menolak laporan
   const handleReject = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
+      // Simulasi delay API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      const response = await axios.post(
-        `/api/approvals/reports/${reportId}/reject/${role}`,
-        { comment },
-        {
-          headers: { Authorization: `Bearer ${token}` }
+      // Buat data mock untuk response
+      const mockResponse = {
+        data: {
+          message: 'Laporan berhasil ditolak (Mock)',
+          approval: {
+            id: Math.floor(Math.random() * 1000),
+            report_id: reportId,
+            role: role,
+            status: 'rejected',
+            comment: comment,
+            rejected_at: new Date().toISOString(),
+            rejected_by: 'Mock User'
+          }
         }
-      );
+      };
       
       toast({
         title: 'Laporan Ditolak',
-        description: response.data.message,
+        description: mockResponse.data.message,
         status: 'warning',
         duration: 3000,
         isClosable: true,
         position: 'top-right'
       });
       
+      // Panggil callback dengan data mock jika disediakan
       if (onApprovalChange) {
-        onApprovalChange(response.data.approval);
+        onApprovalChange(mockResponse.data.approval);
       }
     } catch (error) {
-      console.error('Rejection error:', error);
+      console.error('Rejection error (Mock):', error);
       toast({
         title: 'Error',
-        description: error.response?.data?.error || 'Gagal menolak laporan',
+        description: 'Gagal menolak laporan (Mock)',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -128,7 +151,7 @@ const ApprovalForm = ({ reportId, role, currentStatus, onApprovalChange }) => {
           <VStack spacing={6} align="stretch">
             <Box>
               <Heading size="md" color="blue.600">
-                Persetujuan Internal - {role.replace(/_/g, ' ')}
+                Persetujuan Internal - {role.replace(/_/g, ' ')} (Mock Mode)
               </Heading>
               <Text fontSize="sm" color="gray.500" mt={2}>
                 Status saat ini: <Badge colorScheme={getStatusColor(currentStatus)}>{currentStatus || 'pending'}</Badge>
@@ -143,7 +166,7 @@ const ApprovalForm = ({ reportId, role, currentStatus, onApprovalChange }) => {
                 <AlertTitle>Perhatian!</AlertTitle>
                 <AlertDescription display="block">
                   Sebagai {role.replace(/_/g, ' ')}, Anda bertanggung jawab untuk memeriksa kelengkapan dan 
-                  kesesuaian teknis laporan sebelum memberikan persetujuan.
+                  kesesuaian teknis laporan sebelum memberikan persetujuan. (Mock Mode)
                 </AlertDescription>
               </Box>
             </Alert>
@@ -153,7 +176,7 @@ const ApprovalForm = ({ reportId, role, currentStatus, onApprovalChange }) => {
               <Textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                placeholder="Masukkan komentar..."
+                placeholder="Masukkan komentar... (Mock)"
                 minHeight="100px"
               />
             </FormControl>
@@ -163,20 +186,20 @@ const ApprovalForm = ({ reportId, role, currentStatus, onApprovalChange }) => {
                 colorScheme="red"
                 onClick={handleReject}
                 isLoading={loading}
-                loadingText="Menolak..."
+                loadingText="Menolak... (Mock)"
                 isDisabled={!reportId}
               >
-                Tolak Laporan
+                Tolak Laporan (Mock)
               </Button>
               
               <Button
                 colorScheme="green"
                 onClick={handleApprove}
                 isLoading={loading}
-                loadingText="Menyetujui..."
+                loadingText="Menyetujui... (Mock)"
                 isDisabled={!reportId}
               >
-                Setujui Laporan
+                Setujui Laporan (Mock)
               </Button>
             </HStack>
           </VStack>

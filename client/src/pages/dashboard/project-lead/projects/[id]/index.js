@@ -1,5 +1,4 @@
-// client/src/pages/dashboard/project-lead/projects/[id]/index.js (asumsi lokasi)
-// atau lokasi file yang sesuai
+// client/src/pages/dashboard/project-lead/projects/[id]/index.js
 import React from 'react';
 import { 
   Box, 
@@ -20,7 +19,8 @@ import {
   AlertTitle,
   AlertDescription,
 } from '@chakra-ui/react';
-import DashboardLayout from 'components/layouts/DashboardLayout';
+// ✅ Perbaiki path import menjadi relatif
+import DashboardLayout from '../../../../../../components/layouts/DashboardLayout'; 
 import { useRouter } from 'next/router';
 
 // ✅ Mock data proyek berdasarkan ID untuk lingkungan mockup

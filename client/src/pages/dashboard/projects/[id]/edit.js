@@ -1,5 +1,5 @@
 // client/src/pages/dashboard/projects/[id]/edit.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Hapus useQuery
 import {
   Box,
   Heading,
@@ -12,7 +12,7 @@ import {
 } from '@chakra-ui/react';
 import DashboardLayout from '../../../../components/layouts/DashboardLayout';
 import ProjectForm from '../../../../components/projects/ProjectForm';
-import { useQuery } from '@tanstack/react-query';
+// Hapus import { useQuery } from '@tanstack/react-query'; // ✅ Hapus
 import { useRouter } from 'next/router';
 
 // Mock data untuk development/testing
@@ -79,32 +79,28 @@ const getMockProject = (id) => {
 };
 
 const EditProjectPage = ({ mockProjectData, mockUserData }) => {
-  const [user, setUser] = useState(mockUserData || {});
+  // ✅ Gunakan props mock langsung atau state yang diinisialisasi dengan props
+  const [user, setUser] = useState(mockUserData || mockUser); 
   const [project, setProject] = useState(mockProjectData || null);
   const toast = useToast();
   const router = useRouter();
   const { id } = router.query;
 
-  // Mock useQuery untuk user dengan konfigurasi yang benar
-  const { data: userData, isLoading: isUserLoading } = useQuery({
-    queryKey: ['user'],
-    queryFn: async () => {
-      return mockUserData || mockUser;
-    },
-    enabled: !!mockUserData,
-    staleTime: 1000 * 60 * 5,
-  });
+  // ✅ Gunakan useEffect untuk menangani perubahan id jika diperlukan
+  // (Meskipun dalam SSG dengan getStaticProps, data sudah ada)
+  useEffect(() => {
+    if (mockProjectData) {
+      setProject(mockProjectData);
+    } else if (id) {
+      const foundProject = getMockProject(id);
+      setProject(foundProject);
+    }
+  }, [id, mockProjectData]);
 
-  // Mock useQuery untuk project dengan konfigurasi yang benar
-  const { data: projectData, isLoading: isProjectLoading } = useQuery({
-    queryKey: ['project', id],
-    queryFn: async () => {
-      if (!id) return null;
-      return mockProjectData || getMockProject(id);
-    },
-    enabled: !!id && !mockProjectData,
-    staleTime: 1000 * 60 * 5,
-  });
+  // ✅ Hilangkan useQuery dan gunakan state/loading yang disederhanakan
+  // Karena data berasal dari getStaticProps, kita bisa mengasumsikan tidak ada loading jangka panjang
+  // Tapi tetap periksa jika data belum tersedia
+  const isLoading = (!mockProjectData && !project && id); // Sederhanakan pengecekan loading
 
   const handleSaveProject = (updatedProject) => {
     console.log('Mock saving updated project:', updatedProject);
@@ -116,26 +112,24 @@ const EditProjectPage = ({ mockProjectData, mockUserData }) => {
       isClosable: true,
     });
     
-    if (updatedProject?.id) {
-      router.push(`/dashboard/projects/${updatedProject.id}`);
-    } else if (id) {
-      router.push(`/dashboard/projects/${id}`);
+    // Navigasi setelah simpan
+    const targetId = updatedProject?.id || id;
+    if (targetId) {
+      router.push(`/dashboard/projects/${targetId}`);
     } else {
       router.push('/dashboard/projects');
     }
   };
 
   const handleCancel = () => {
-    if (project?.id) {
-      router.push(`/dashboard/projects/${project.id}`);
-    } else if (id) {
-      router.push(`/dashboard/projects/${id}`);
+    // Navigasi saat batal
+    const targetId = project?.id || id;
+    if (targetId) {
+      router.push(`/dashboard/projects/${targetId}`);
     } else {
       router.push('/dashboard/projects');
     }
   };
-
-  const isLoading = isUserLoading || isProjectLoading;
 
   // Handle fallback state
   if (router.isFallback) {
@@ -150,6 +144,7 @@ const EditProjectPage = ({ mockProjectData, mockUserData }) => {
     );
   }
 
+  // Handle loading state sederhana
   if (isLoading) {
     return (
       <DashboardLayout user={user}>
@@ -166,8 +161,8 @@ const EditProjectPage = ({ mockProjectData, mockUserData }) => {
     );
   }
 
-  // Handle error state
-  if (!projectData && !mockProjectData) {
+  // Handle error state: project tidak ditemukan
+  if (!project && !mockProjectData) {
     return (
       <DashboardLayout user={user}>
         <Box p={6}>
@@ -184,16 +179,15 @@ const EditProjectPage = ({ mockProjectData, mockUserData }) => {
     );
   }
 
-  const projectToDisplay = mockProjectData || projectData || project;
-
+  // Render form dengan data project
   return (
-    <DashboardLayout user={userData || user || {}}>
+    <DashboardLayout user={user}> {/* Gunakan user dari state */}
       <Box p={6}>
         <Heading mb={6} color="blue.600">
-          Edit Proyek: {projectToDisplay?.name} (Mock Mode)
+          Edit Proyek: {project?.name} (Mock Mode)
         </Heading>
         <ProjectForm
-          project={projectToDisplay}
+          project={project} {/* Gunakan project dari state */}
           onSave={handleSaveProject}
           onCancel={handleCancel}
           isEditing={true}

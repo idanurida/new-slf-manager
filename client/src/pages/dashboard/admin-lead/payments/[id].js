@@ -82,7 +82,6 @@ const PaymentDetail = () => {
   const { id } = router.query;
   const [payment, setPayment] = useState(null);
   const [verificationNotes, setVerificationNotes] = useState('');
-  const [rejectionReason, setRejectionReason] = useState('');
   const toast = useToast();
 
   useEffect(() => {
@@ -109,9 +108,9 @@ const PaymentDetail = () => {
       position: 'top-right'
     });
     
-    // Simulate redirect
+    // Redirect ke halaman daftar pembayaran
     setTimeout(() => {
-      router.push('/dashboard/admin-lead');
+      router.push('/dashboard/admin-lead/payments');
     }, 1500);
   };
 
@@ -131,9 +130,9 @@ const PaymentDetail = () => {
         position: 'top-right'
       });
       
-      // Simulate redirect
+      // Redirect ke halaman daftar pembayaran
       setTimeout(() => {
-        router.push('/dashboard/admin-lead');
+        router.push('/dashboard/admin-lead/payments');
       }, 1500);
     }
   };
@@ -167,9 +166,9 @@ const PaymentDetail = () => {
             </AlertDescription>
             <Button 
               mt={4} 
-              onClick={() => router.push('/dashboard/admin-lead')}
+              onClick={() => router.push('/dashboard/admin-lead/payments')}
             >
-              Kembali ke Dashboard
+              Kembali ke Daftar Pembayaran
             </Button>
           </Alert>
         </Box>
@@ -180,7 +179,18 @@ const PaymentDetail = () => {
   return (
     <DashboardLayout user={mockUser}>
       <Box p={6}>
-        <Heading mb={6} color="blue.600">Detail Pembayaran</Heading>
+        {/* Tombol kembali ke daftar pembayaran */}
+        <HStack mb={4}>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={() => router.push('/dashboard/admin-lead/payments')}
+          >
+            ← Kembali ke Daftar Pembayaran
+          </Button>
+        </HStack>
+
+        <Heading mb={6} color="blue.600">Detail Pembayaran #{payment.id}</Heading>
         
         <Card mb={6}>
           <CardBody>

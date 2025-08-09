@@ -27,11 +27,21 @@ import {
   NumberInputField,
   NumberInputStepper,
   NumberIncrementStepper,
-  NumberDecrementStepper
+  NumberDecrementStepper,
+  FormErrorMessage // Tambahkan ini
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import axios from 'axios';
+// Hapus import axios
 import { useRouter } from 'next/router';
+
+// Mock data untuk pengguna
+const mockUsers = [
+  { id: 1, name: 'John Doe', email: 'john@example.com', role: 'project_lead' },
+  { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'project_lead' },
+  { id: 3, name: 'Client A', email: 'clienta@example.com', role: 'client' },
+  { id: 4, name: 'Client B', email: 'clientb@example.com', role: 'client' },
+  // Tambahkan lebih banyak mock user jika diperlukan
+];
 
 const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
   const [formData, setFormData] = useState({
@@ -51,12 +61,14 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
   });
   
   const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState([]);
+  // Gunakan mockUsers langsung, tidak perlu state untuk users
+  // const [users, setUsers] = useState([]); 
   const [errors, setErrors] = useState({});
   const toast = useToast();
   const router = useRouter();
 
-  // Fetch users for dropdowns
+  // Hilangkan useEffect untuk fetchUsers karena kita menggunakan mock data
+  /*
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -81,6 +93,7 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
 
     fetchUsers();
   }, [toast]);
+  */
 
   // Handle form input changes
   const handleChange = (e) => {
@@ -155,7 +168,7 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submission
+  // Handle form submission (Mock)
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -174,32 +187,30 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
     setLoading(true);
     
     try {
-      const token = localStorage.getItem('token');
-      let response;
+      // Simulasi delay API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Buat objek data yang akan dikembalikan (simulasi response API)
+      const responseData = {
+        ...formData,
+        id: project?.id || Math.floor(Math.random() * 10000), // Gunakan ID yang ada atau buat mock ID
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
       
       if (isEditing && project?.id) {
-        // Update existing project
-        response = await axios.put(`/api/projects/${project.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
         toast({
           title: 'Berhasil',
-          description: 'Data proyek berhasil diperbarui',
+          description: 'Data proyek berhasil diperbarui (Mock)',
           status: 'success',
           duration: 3000,
           isClosable: true,
           position: 'top-right'
         });
       } else {
-        // Create new project
-        response = await axios.post('/api/projects', formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
         toast({
           title: 'Berhasil',
-          description: 'Proyek baru berhasil dibuat',
+          description: 'Proyek baru berhasil dibuat (Mock)',
           status: 'success',
           duration: 3000,
           isClosable: true,
@@ -209,19 +220,21 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
       
       // Call onSave callback if provided
       if (onSave) {
-        onSave(response.data);
+        // Simulate API response structure
+        onSave({ data: responseData });
       }
       
-      // Redirect to project detail page
-      if (response.data.id) {
-        router.push(`/dashboard/projects/${response.data.id}`);
-      }
+      // Redirect to project detail page (Mock)
+      // Kita tidak bisa melakukan redirect nyata karena ini mock, jadi kita bisa memanggil onCancel atau hanya menampilkan pesan
+      // Untuk tujuan testing, kita bisa memanggil onCancel untuk kembali ke halaman sebelumnya
+      // atau menggunakan router.push jika benar-benar diperlukan, tapi pastikan itu juga mock.
+      // Dalam konteks komponen form, biasanya parent page yang menangani redirect setelah onSave.
       
     } catch (error) {
-      console.error('Project form error:', error);
+      console.error('Project form error (Mock):', error);
       toast({
         title: 'Error',
-        description: error.response?.data?.error || 'Gagal menyimpan data proyek',
+        description: 'Gagal menyimpan data proyek (Mock)',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -232,9 +245,11 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
     }
   };
 
-  // Get filtered users by role
+  // Get filtered users by role (dari mock data)
   const getUsersByRole = (role) => {
-    return users.filter(user => user.role === role);
+    // Sesuaikan role 'klien' dengan 'client' dari mock data jika perlu
+    const normalizedRole = role === 'klien' ? 'client' : role;
+    return mockUsers.filter(user => user.role === normalizedRole);
   };
 
   // Get building function options
@@ -280,12 +295,12 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
           <VStack spacing={6} align="stretch">
             <Box>
               <Heading size="lg" color="blue.600">
-                {isEditing ? 'Edit Proyek' : 'Buat Proyek Baru'}
+                {isEditing ? 'Edit Proyek' : 'Buat Proyek Baru'} (Mock Mode)
               </Heading>
               <Text color="gray.500">
                 {isEditing 
-                  ? 'Perbarui informasi proyek' 
-                  : 'Buat proyek baru untuk permohonan SLF'}
+                  ? 'Perbarui informasi proyek (Mock)' 
+                  : 'Buat proyek baru untuk permohonan SLF (Mock)'}
               </Text>
             </Box>
             
@@ -310,7 +325,7 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
                           placeholder="Masukkan nama proyek"
                           isDisabled={loading}
                         />
-                        <FormErrorMessage>{errors.name}</FormErrorMessage>
+                        {errors.name && <FormErrorMessage>{errors.name}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                     
@@ -324,7 +339,7 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
                           placeholder="Masukkan nama pemilik"
                           isDisabled={loading}
                         />
-                        <FormErrorMessage>{errors.owner_name}</FormErrorMessage>
+                        {errors.owner_name && <FormErrorMessage>{errors.owner_name}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                     
@@ -339,7 +354,7 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
                           minHeight="100px"
                           isDisabled={loading}
                         />
-                        <FormErrorMessage>{errors.address}</FormErrorMessage>
+                        {errors.address && <FormErrorMessage>{errors.address}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                   </Grid>
@@ -370,7 +385,7 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
                             </option>
                           ))}
                         </Select>
-                        <FormErrorMessage>{errors.building_function}</FormErrorMessage>
+                        {errors.building_function && <FormErrorMessage>{errors.building_function}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                     
@@ -391,7 +406,7 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
                             <NumberDecrementStepper />
                           </NumberInputStepper>
                         </NumberInput>
-                        <FormErrorMessage>{errors.floors}</FormErrorMessage>
+                        {errors.floors && <FormErrorMessage>{errors.floors}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                     
@@ -408,7 +423,7 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
                         >
                           <NumberInputField placeholder="0.00" />
                         </NumberInput>
-                        <FormErrorMessage>{errors.height}</FormErrorMessage>
+                        {errors.height && <FormErrorMessage>{errors.height}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                     
@@ -425,7 +440,7 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
                         >
                           <NumberInputField placeholder="0.00" />
                         </NumberInput>
-                        <FormErrorMessage>{errors.area}</FormErrorMessage>
+                        {errors.area && <FormErrorMessage>{errors.area}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                     
@@ -439,7 +454,7 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
                           placeholder="Masukkan lokasi proyek"
                           isDisabled={loading}
                         />
-                        <FormErrorMessage>{errors.location}</FormErrorMessage>
+                        {errors.location && <FormErrorMessage>{errors.location}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                     
@@ -453,7 +468,7 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
                           placeholder="Contoh: -6.123456, 106.789012"
                           isDisabled={loading}
                         />
-                        <FormErrorMessage>{errors.coordinates}</FormErrorMessage>
+                        {errors.coordinates && <FormErrorMessage>{errors.coordinates}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                   </Grid>
@@ -483,7 +498,7 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
                             </option>
                           ))}
                         </Select>
-                        <FormErrorMessage>{errors.request_type}</FormErrorMessage>
+                        {errors.request_type && <FormErrorMessage>{errors.request_type}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                   </Grid>
@@ -514,7 +529,7 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
                             </option>
                           ))}
                         </Select>
-                        <FormErrorMessage>{errors.project_lead_id}</FormErrorMessage>
+                        {errors.project_lead_id && <FormErrorMessage>{errors.project_lead_id}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                     
@@ -534,7 +549,7 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
                             </option>
                           ))}
                         </Select>
-                        <FormErrorMessage>{errors.client_id}</FormErrorMessage>
+                        {errors.client_id && <FormErrorMessage>{errors.client_id}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                   </Grid>
@@ -556,7 +571,7 @@ const ProjectForm = ({ project, onSave, onCancel, isEditing = false }) => {
                     isLoading={loading}
                     loadingText={isEditing ? "Memperbarui..." : "Membuat..."}
                   >
-                    {isEditing ? "Perbarui Proyek" : "Buat Proyek"}
+                    {isEditing ? "Perbarui Proyek" : "Buat Proyek"} (Mock)
                   </Button>
                 </HStack>
               </VStack>

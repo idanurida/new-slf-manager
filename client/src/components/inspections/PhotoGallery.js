@@ -20,11 +20,52 @@ import {
   Badge,
   Divider,
   Button,
-  useDisclosure
+  useDisclosure,
+  Alert, // Tambahkan Alert
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  Link as ChakraLink // Tambahkan Link
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { ViewIcon, DownloadIcon, DeleteIcon } from '@chakra-ui/icons';
-import axios from 'axios';
+// Hapus import axios
+// import axios from 'axios';
+import NextLink from 'next/link'; // Tambahkan NextLink
+
+// Mock data untuk foto
+const mockPhotos = [
+  {
+    id: 1,
+    file_path: 'photo1.jpg',
+    caption: 'Foto dokumentasi struktur pondasi',
+    floor_info: 'Lantai 1',
+    latitude: -6.2088,
+    longitude: 106.8456,
+    created_at: '2023-07-15T10:30:00Z',
+    uploader: { id: 1, name: 'Inspector A' }
+  },
+  {
+    id: 2,
+    file_path: 'photo2.jpg',
+    caption: 'Pemeriksaan instalasi listrik',
+    floor_info: 'Lantai 2',
+    latitude: -6.2089,
+    longitude: 106.8457,
+    created_at: '2023-07-15T11:00:00Z',
+    uploader: { id: 1, name: 'Inspector A' }
+  },
+  {
+    id: 3,
+    file_path: 'photo3.jpg',
+    caption: 'Detail sudut bangunan',
+    floor_info: 'Lantai 3',
+    latitude: -6.2090,
+    longitude: 106.8458,
+    created_at: '2023-07-15T11:30:00Z',
+    uploader: { id: 2, name: 'Inspector B' }
+  }
+];
 
 const PhotoGallery = ({ inspectionId, onPhotoDelete }) => {
   const [photos, setPhotos] = useState([]);
@@ -34,23 +75,24 @@ const PhotoGallery = ({ inspectionId, onPhotoDelete }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
 
+  // Modifikasi fetchPhotos untuk menggunakan mock data
   const fetchPhotos = async () => {
     if (!inspectionId) return;
     
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
       
-      const response = await axios.get(`/api/inspections/${inspectionId}/photos`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Simulasi delay API call
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      setPhotos(response.data);
+      // Gunakan mock data
+      setPhotos(mockPhotos);
+      
     } catch (error) {
-      console.error('Error fetching photos:', error);
+      console.error('Error fetching photos (Mock):', error);
       toast({
         title: 'Gagal memuat foto',
-        description: error.response?.data?.error || 'Terjadi kesalahan saat memuat foto.',
+        description: 'Terjadi kesalahan saat memuat foto. (Mock)',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -70,49 +112,68 @@ const PhotoGallery = ({ inspectionId, onPhotoDelete }) => {
     onOpen();
   };
 
+  // Modifikasi handleDownloadPhoto untuk menggunakan cara yang lebih aman
   const handleDownloadPhoto = (photo) => {
-    const link = document.createElement('a');
-    link.href = `/uploads/${photo.file_path}`;
-    link.download = photo.file_path.split('/').pop();
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Dalam mode mock/testing, kita bisa menampilkan alert atau link
+    // Karena ini mock, kita tidak benar-benar mengunduh file
+    toast({
+      title: 'Simulasi Unduh',
+      description: `Akan mengunduh foto: ${photo.file_path} (Mock)`,
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+      position: 'top-right'
+    });
+    
+    // Alternatif: Buka foto di tab baru (hanya jika di browser)
+    if (typeof window !== 'undefined') {
+      // window.open(`/uploads/${photo.file_path}`, '_blank');
+      // Atau, karena ini mock, kita bisa menunjukkan path file:
+      console.log(`[Mock Download] File path: /uploads/${photo.file_path}`);
+    }
   };
 
+  // Modifikasi handleDeletePhoto untuk menggunakan logika mock
   const handleDeletePhoto = async (photoId) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus foto ini?')) {
-      return;
-    }
-
+    // Dalam mode mock, kita tidak benar-benar menghapus
+    // Tapi kita bisa menampilkan konfirmasi dan simulasi
+    
+    // Simulasi konfirmasi (kita bisa menggunakan Chakra UI Alert Dialog untuk ini dalam produksi)
+    // Untuk kesederhanaan, kita langsung proses
+    
     setDeleting(true);
     try {
-      const token = localStorage.getItem('token');
+      // Simulasi delay API call
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      await axios.delete(`/api/inspections/photos/${photoId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Update state photos untuk menghapus foto
+      setPhotos(prevPhotos => prevPhotos.filter(p => p.id !== photoId));
       
       toast({
         title: 'Foto dihapus',
-        description: 'Foto berhasil dihapus dari galeri.',
+        description: 'Foto berhasil dihapus dari galeri. (Mock)',
         status: 'success',
         duration: 3000,
         isClosable: true,
         position: 'top-right'
       });
       
-      // Refresh gallery
-      fetchPhotos();
-      
       // Callback to parent
       if (onPhotoDelete) {
         onPhotoDelete(photoId);
       }
+      
+      // Jika foto yang sedang dilihat dihapus, tutup modal
+      if (selectedPhoto && selectedPhoto.id === photoId) {
+        onClose();
+        setSelectedPhoto(null);
+      }
+      
     } catch (error) {
-      console.error('Delete photo error:', error);
+      console.error('Delete photo error (Mock):', error);
       toast({
         title: 'Gagal menghapus foto',
-        description: error.response?.data?.error || 'Terjadi kesalahan saat menghapus foto.',
+        description: 'Terjadi kesalahan saat menghapus foto. (Mock)',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -136,7 +197,22 @@ const PhotoGallery = ({ inspectionId, onPhotoDelete }) => {
   if (!photos || photos.length === 0) {
     return (
       <Box textAlign="center" py={10}>
-        <Text color="gray.500">Belum ada foto yang diunggah</Text>
+        <Alert
+          status="info"
+          variant="subtle"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          textAlign="center"
+        >
+          <AlertIcon boxSize="40px" mr={0} />
+          <AlertTitle mt={4} mb={1} fontSize="lg">
+            Belum ada foto yang diunggah (Mock)
+          </AlertTitle>
+          <AlertDescription maxWidth="sm">
+            Foto yang diunggah selama inspeksi akan muncul di sini.
+          </AlertDescription>
+        </Alert>
       </Box>
     );
   }
@@ -153,9 +229,10 @@ const PhotoGallery = ({ inspectionId, onPhotoDelete }) => {
             <Card>
               <CardBody p={0}>
                 <Box position="relative">
+                  {/* Gunakan path absolut untuk mock image atau placeholder */}
                   <Image
-                    src={`/uploads/${photo.file_path}`}
-                    alt={photo.caption || 'Foto dokumentasi'}
+                    src={`/mock-images/${photo.file_path}` || '/placeholder-image.jpg'}
+                    alt={photo.caption || 'Foto dokumentasi (Mock)'}
                     maxH="200px"
                     objectFit="cover"
                     borderRadius="md"
@@ -163,6 +240,7 @@ const PhotoGallery = ({ inspectionId, onPhotoDelete }) => {
                     borderColor="gray.200"
                     cursor="pointer"
                     onClick={() => handleViewPhoto(photo)}
+                    fallbackSrc="/placeholder-image.jpg" // Tambahkan fallback
                   />
                   <HStack 
                     position="absolute" 
@@ -172,7 +250,7 @@ const PhotoGallery = ({ inspectionId, onPhotoDelete }) => {
                   >
                     <IconButton
                       icon={<ViewIcon />}
-                      aria-label="View photo"
+                      aria-label="View photo (Mock)"
                       size="sm"
                       colorScheme="blackAlpha"
                       onClick={(e) => {
@@ -182,7 +260,7 @@ const PhotoGallery = ({ inspectionId, onPhotoDelete }) => {
                     />
                     <IconButton
                       icon={<DownloadIcon />}
-                      aria-label="Download photo"
+                      aria-label="Download photo (Mock)"
                       size="sm"
                       colorScheme="blackAlpha"
                       onClick={(e) => {
@@ -192,7 +270,7 @@ const PhotoGallery = ({ inspectionId, onPhotoDelete }) => {
                     />
                     <IconButton
                       icon={<DeleteIcon />}
-                      aria-label="Delete photo"
+                      aria-label="Delete photo (Mock)"
                       size="sm"
                       colorScheme="red"
                       onClick={(e) => {
@@ -241,12 +319,14 @@ const PhotoGallery = ({ inspectionId, onPhotoDelete }) => {
           <ModalBody p={0}>
             {selectedPhoto && (
               <VStack spacing={0} align="stretch">
+                {/* Gunakan path absolut untuk mock image atau placeholder */}
                 <Image
-                  src={`/uploads/${selectedPhoto.file_path}`}
-                  alt={selectedPhoto.caption || 'Foto dokumentasi'}
+                  src={`/mock-images/${selectedPhoto.file_path}` || '/placeholder-image.jpg'}
+                  alt={selectedPhoto.caption || 'Foto dokumentasi (Mock)'}
                   maxH="70vh"
                   objectFit="contain"
                   w="100%"
+                  fallbackSrc="/placeholder-image.jpg" // Tambahkan fallback
                 />
                 
                 <Box p={4}>
@@ -279,6 +359,16 @@ const PhotoGallery = ({ inspectionId, onPhotoDelete }) => {
                       </Text>
                     </HStack>
                     
+                    <Alert status="info" size="sm">
+                      <AlertIcon />
+                      <Box>
+                        <AlertTitle>Mode Mock!</AlertTitle>
+                        <AlertDescription>
+                          Ini adalah simulasi. Dalam aplikasi nyata, Anda bisa mengunduh foto ini.
+                        </AlertDescription>
+                      </Box>
+                    </Alert>
+                    
                     <HStack justifyContent="flex-end" pt={2}>
                       <Button
                         leftIcon={<DownloadIcon />}
@@ -286,7 +376,7 @@ const PhotoGallery = ({ inspectionId, onPhotoDelete }) => {
                         size="sm"
                         onClick={() => handleDownloadPhoto(selectedPhoto)}
                       >
-                        Unduh Foto
+                        Simulasi Unduh Foto (Mock)
                       </Button>
                     </HStack>
                   </VStack>

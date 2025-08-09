@@ -32,11 +32,22 @@ import {
   RadioGroup,
   Stack,
   Checkbox,
-  CheckboxGroup
+  CheckboxGroup,
+  FormErrorMessage // Tambahkan ini
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import axios from 'axios';
+// Hapus import axios
+// import axios from 'axios';
 import { useRouter } from 'next/router';
+
+// Mock data untuk pengguna
+const mockUsers = [
+  { id: 1, name: 'Inspector A', email: 'inspectorA@example.com', role: 'inspector' },
+  { id: 2, name: 'Inspector B', email: 'inspectorB@example.com', role: 'inspector' },
+  { id: 3, name: 'Drafter X', email: 'drafterX@example.com', role: 'drafter' },
+  { id: 4, name: 'Drafter Y', email: 'drafterY@example.com', role: 'drafter' },
+  // Tambahkan lebih banyak mock user jika diperlukan
+];
 
 const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) => {
   const [formData, setFormData] = useState({
@@ -48,14 +59,16 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
     ...inspection
   });
   
-  const [users, setUsers] = useState([]);
+  // Gunakan mockUsers langsung, tidak perlu state untuk users dan fetchingUsers
+  // const [users, setUsers] = useState([]);
+  // const [fetchingUsers, setFetchingUsers] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [fetchingUsers, setFetchingUsers] = useState(true);
   const [errors, setErrors] = useState({});
   const toast = useToast();
   const router = useRouter();
 
-  // Fetch users for dropdowns
+  // Hilangkan useEffect untuk fetchUsers karena kita menggunakan mock data
+  /*
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -84,6 +97,7 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
 
     fetchUsers();
   }, [toast]);
+  */
 
   // Handle form input changes
   const handleChange = (e) => {
@@ -102,7 +116,7 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
     }
   };
 
-  // Handle number input changes
+  // Handle number input changes (tidak digunakan dalam form ini, tapi tetap disertakan untuk konsistensi)
   const handleNumberChange = (name, value) => {
     setFormData(prev => ({
       ...prev,
@@ -138,7 +152,7 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submission
+  // Handle form submission (Mock)
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -157,32 +171,31 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
     setLoading(true);
     
     try {
-      const token = localStorage.getItem('token');
-      let response;
+      // Simulasi delay API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Buat objek data yang akan dikembalikan (simulasi response API)
+      const responseData = {
+        ...formData,
+        id: inspection?.id || Math.floor(Math.random() * 10000), // Gunakan ID yang ada atau buat mock ID
+        project_id: projectId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
       
       if (isEditing && inspection?.id) {
-        // Update existing inspection
-        response = await axios.put(`/api/inspections/${inspection.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
         toast({
           title: 'Berhasil',
-          description: 'Data inspeksi berhasil diperbarui',
+          description: 'Data inspeksi berhasil diperbarui (Mock)',
           status: 'success',
           duration: 3000,
           isClosable: true,
           position: 'top-right'
         });
       } else {
-        // Create new inspection
-        response = await axios.post(`/api/projects/${projectId}/inspections`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
         toast({
           title: 'Berhasil',
-          description: 'Inspeksi baru berhasil dibuat',
+          description: 'Inspeksi baru berhasil dibuat (Mock)',
           status: 'success',
           duration: 3000,
           isClosable: true,
@@ -192,19 +205,22 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
       
       // Call onSave callback if provided
       if (onSave) {
-        onSave(response.data);
+        // Simulate API response structure
+        onSave({ data: responseData });
       }
       
-      // Redirect to inspection detail page
-      if (response.data.id) {
-        router.push(`/dashboard/projects/${projectId}/inspections/${response.data.id}`);
+      // Redirect to inspection detail page (Mock)
+      // Kita tidak bisa melakukan redirect nyata karena ini mock, tapi kita bisa menggunakan router.push
+      // untuk simulasi. Pastikan projectId tersedia.
+      if (responseData.id && projectId) {
+        router.push(`/dashboard/projects/${projectId}/inspections/${responseData.id}`);
       }
       
     } catch (error) {
-      console.error('Inspection form error:', error);
+      console.error('Inspection form error (Mock):', error);
       toast({
         title: 'Error',
-        description: error.response?.data?.error || 'Gagal menyimpan data inspeksi',
+        description: 'Gagal menyimpan data inspeksi (Mock)',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -215,9 +231,9 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
     }
   };
 
-  // Get filtered users by role
+  // Get filtered users by role (dari mock data)
   const getUsersByRole = (role) => {
-    return users.filter(user => user.role === role);
+    return mockUsers.filter(user => user.role === role);
   };
 
   // Get inspection status options
@@ -230,35 +246,11 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
     ];
   };
 
-  if (fetchingUsers) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Card>
-          <CardBody>
-            <VStack spacing={6} align="stretch">
-              <Skeleton height="40px" width="200px" />
-              <Skeleton height="20px" width="300px" />
-              
-              <VStack spacing={4} align="stretch">
-                {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} height="60px" />
-                ))}
-              </VStack>
-              
-              <HStack justify="flex-end">
-                <Skeleton height="40px" width="100px" />
-                <Skeleton height="40px" width="100px" />
-              </HStack>
-            </VStack>
-          </CardBody>
-        </Card>
-      </motion.div>
-    );
-  }
+  // Karena kita tidak lagi fetching users, kita tidak perlu tampilan loading untuk itu
+  // Tapi kita bisa tetap menunjukkan bahwa komponen sedang memuat saat submit
+  // if (fetchingUsers) {
+  //   // ... (kode skeleton)
+  // }
 
   return (
     <motion.div
@@ -277,12 +269,12 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
           <VStack spacing={6} align="stretch">
             <Box>
               <Heading size="md" color="blue.600">
-                {isEditing ? 'Edit Inspeksi' : 'Jadwalkan Inspeksi Baru'}
+                {isEditing ? 'Edit Inspeksi' : 'Jadwalkan Inspeksi Baru'} (Mock Mode)
               </Heading>
               <Text fontSize="sm" color="gray.500" mt={1}>
                 {isEditing 
-                  ? 'Perbarui informasi inspeksi' 
-                  : 'Buat jadwal inspeksi baru untuk proyek'}
+                  ? 'Perbarui informasi inspeksi (Mock)' 
+                  : 'Buat jadwal inspeksi baru untuk proyek (Mock)'}
               </Text>
             </Box>
             
@@ -293,13 +285,13 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
                 {/* Schedule Information */}
                 <Box>
                   <Heading size="sm" mb={4} color="gray.700">
-                    Informasi Jadwal Inspeksi
+                    Informasi Jadwal Inspeksi (Mock)
                   </Heading>
                   
                   <Grid templateColumns="repeat(2, 1fr)" gap={6}>
                     <GridItem colSpan={{ base: 2, md: 1 }}>
                       <FormControl isRequired isInvalid={!!errors.scheduled_date}>
-                        <FormLabel>Tanggal Jadwal</FormLabel>
+                        <FormLabel>Tanggal Jadwal (Mock)</FormLabel>
                         <Input
                           type="date"
                           name="scheduled_date"
@@ -307,13 +299,13 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
                           onChange={handleChange}
                           isDisabled={loading}
                         />
-                        <FormErrorMessage>{errors.scheduled_date}</FormErrorMessage>
+                        {errors.scheduled_date && <FormErrorMessage>{errors.scheduled_date}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                     
                     <GridItem colSpan={{ base: 2, md: 1 }}>
                       <FormControl isRequired isInvalid={!!errors.status}>
-                        <FormLabel>Status</FormLabel>
+                        <FormLabel>Status (Mock)</FormLabel>
                         <Select
                           name="status"
                           value={formData.status}
@@ -326,7 +318,7 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
                             </option>
                           ))}
                         </Select>
-                        <FormErrorMessage>{errors.status}</FormErrorMessage>
+                        {errors.status && <FormErrorMessage>{errors.status}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                   </Grid>
@@ -337,38 +329,38 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
                 {/* Team Assignment */}
                 <Box>
                   <Heading size="sm" mb={4} color="gray.700">
-                    Penugasan Tim
+                    Penugasan Tim (Mock)
                   </Heading>
                   
                   <Grid templateColumns="repeat(2, 1fr)" gap={6}>
                     <GridItem colSpan={{ base: 2, md: 1 }}>
                       <FormControl isRequired isInvalid={!!errors.inspector_id}>
-                        <FormLabel>Inspektor</FormLabel>
+                        <FormLabel>Inspektor (Mock)</FormLabel>
                         <Select
                           name="inspector_id"
                           value={formData.inspector_id}
                           onChange={handleChange}
-                          placeholder="Pilih Inspektor"
+                          placeholder="Pilih Inspektor (Mock)"
                           isDisabled={loading}
                         >
-                          {getUsersByRole('inspektor').map((user) => (
+                          {getUsersByRole('inspector').map((user) => (
                             <option key={user.id} value={user.id}>
                               {user.name} ({user.email})
                             </option>
                           ))}
                         </Select>
-                        <FormErrorMessage>{errors.inspector_id}</FormErrorMessage>
+                        {errors.inspector_id && <FormErrorMessage>{errors.inspector_id}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                     
                     <GridItem colSpan={{ base: 2, md: 1 }}>
                       <FormControl isRequired isInvalid={!!errors.drafter_id}>
-                        <FormLabel>Drafter</FormLabel>
+                        <FormLabel>Drafter (Mock)</FormLabel>
                         <Select
                           name="drafter_id"
                           value={formData.drafter_id}
                           onChange={handleChange}
-                          placeholder="Pilih Drafter"
+                          placeholder="Pilih Drafter (Mock)"
                           isDisabled={loading}
                         >
                           {getUsersByRole('drafter').map((user) => (
@@ -377,7 +369,7 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
                             </option>
                           ))}
                         </Select>
-                        <FormErrorMessage>{errors.drafter_id}</FormErrorMessage>
+                        {errors.drafter_id && <FormErrorMessage>{errors.drafter_id}</FormErrorMessage>}
                       </FormControl>
                     </GridItem>
                   </Grid>
@@ -388,20 +380,20 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
                 {/* Notes */}
                 <Box>
                   <Heading size="sm" mb={4} color="gray.700">
-                    Catatan Tambahan
+                    Catatan Tambahan (Mock)
                   </Heading>
                   
                   <FormControl isInvalid={!!errors.notes}>
-                    <FormLabel>Catatan</FormLabel>
+                    <FormLabel>Catatan (Mock)</FormLabel>
                     <Textarea
                       name="notes"
                       value={formData.notes}
                       onChange={handleChange}
-                      placeholder="Masukkan catatan tambahan untuk inspeksi..."
+                      placeholder="Masukkan catatan tambahan untuk inspeksi... (Mock)"
                       minHeight="100px"
                       isDisabled={loading}
                     />
-                    <FormErrorMessage>{errors.notes}</FormErrorMessage>
+                    {errors.notes && <FormErrorMessage>{errors.notes}</FormErrorMessage>}
                   </FormControl>
                 </Box>
                 
@@ -412,16 +404,16 @@ const InspectionForm = ({ inspection, projectId, onSave, isEditing = false }) =>
                     onClick={() => router.push(`/dashboard/projects/${projectId}/inspections`)}
                     isDisabled={loading}
                   >
-                    Batal
+                    Batal (Mock)
                   </Button>
                   
                   <Button
                     type="submit"
                     colorScheme="blue"
                     isLoading={loading}
-                    loadingText={isEditing ? "Memperbarui..." : "Menjadwalkan..."}
+                    loadingText={isEditing ? "Memperbarui... (Mock)" : "Menjadwalkan... (Mock)"}
                   >
-                    {isEditing ? "Perbarui Inspeksi" : "Jadwalkan Inspeksi"}
+                    {isEditing ? "Perbarui Inspeksi (Mock)" : "Jadwalkan Inspeksi (Mock)"}
                   </Button>
                 </HStack>
               </VStack>

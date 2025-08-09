@@ -1,5 +1,5 @@
 // client/src/components/inspections/PhotoUpload.js
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react'; // Tambahkan useEffect
 import {
   Box,
   Button,
@@ -32,9 +32,29 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
   const [error, setError] = useState('');
   const [floorInfo, setFloorInfo] = useState('');
   const [caption, setCaption] = useState('');
+  const [cameraSupported, setCameraSupported] = useState(false); // Tambahkan state untuk cek dukungan kamera
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const toast = useToast();
+
+  // Periksa dukungan kamera saat komponen mount (hanya di browser)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && navigator.mediaDevices) {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          // Jika berhasil, hentikan stream dan set dukungan kamera
+          stream.getTracks().forEach(track => track.stop());
+          setCameraSupported(true);
+        })
+        .catch(err => {
+          // Jika gagal, kamera tidak didukung atau ditolak
+          console.warn('Kamera tidak didukung atau akses ditolak:', err);
+          setCameraSupported(false);
+        });
+    } else {
+      setCameraSupported(false);
+    }
+  }, []);
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
@@ -73,13 +93,27 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
   };
 
   const handleTakePhoto = async () => {
+    // Periksa dukungan kamera sebelum mencoba mengakses
+    if (!cameraSupported) {
+      toast({
+        title: 'Kamera tidak didukung',
+        description: 'Perangkat Anda tidak mendukung akses kamera atau izin ditolak.',
+        status: 'warning',
+        duration: 5000,
+        isClosable: true,
+        position: 'top-right'
+      });
+      return;
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       const video = document.createElement('video');
       video.srcObject = stream;
-      video.play();
+      await video.play(); // Tunggu video siap
 
-      // Tunggu beberapa detik untuk kamera siap
+      // Tunggu beberapa detik untuk kamera siap, atau gunakan requestAnimationFrame
+      // Untuk kesederhanaan, kita gunakan setTimeout
       setTimeout(() => {
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
@@ -88,11 +122,23 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         
         canvas.toBlob((blob) => {
-          const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
-          setSelectedFile(file);
-          setPreviewUrl(URL.createObjectURL(file));
+          if (blob) {
+            const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+            setSelectedFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
+          } else {
+            toast({
+              title: 'Error',
+              description: 'Gagal membuat foto dari kamera.',
+              status: 'error',
+              duration: 5000,
+              isClosable: true,
+              position: 'top-right'
+            });
+          }
         }, 'image/jpeg', 0.95);
         
+        // Hentikan stream kamera
         stream.getTracks().forEach(track => track.stop());
       }, 1000);
     } catch (err) {
@@ -150,35 +196,43 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
       }, 200);
 
       // Panggil fungsi upload dari parent component
-      await onUpload({
-        file: selectedFile,
-        floor_info: floorInfo,
-        caption: caption
-      }, () => {
-        // Callback untuk update progress jika diperlukan
+      // Tambahkan penanganan error yang lebih baik
+      try {
+        await onUpload({
+          photo: selectedFile, // Sesuaikan dengan prop yang diharapkan oleh parent
+          floor_info: floorInfo,
+          caption: caption
+        });
+
+        // Setelah onUpload selesai, hentikan interval dan set progress ke 100
         clearInterval(interval);
         setProgress(100);
-      });
-
-      clearInterval(interval);
-      
-      toast({
-        title: 'Foto berhasil diunggah',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-        position: 'top-right'
-      });
-      
-      // Reset form
-      setSelectedFile(null);
-      setPreviewUrl('');
-      setFloorInfo('');
-      setCaption('');
-      setProgress(0);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        
+        toast({
+          title: 'Foto berhasil diunggah',
+          description: 'Foto telah berhasil diunggah (Mock).',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+          position: 'top-right'
+        });
+        
+        // Reset form setelah delay kecil untuk menunjukkan progress 100%
+        setTimeout(() => {
+          setSelectedFile(null);
+          setPreviewUrl('');
+          setFloorInfo('');
+          setCaption('');
+          setProgress(0);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+        }, 500);
+      } catch (uploadError) {
+        clearInterval(interval);
+        throw uploadError; // Lempar ulang error untuk ditangkap oleh blok catch luar
       }
+
     } catch (error) {
       console.error('Upload error:', error);
       setError(error.message || 'Gagal mengunggah foto.');
@@ -196,6 +250,10 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
   };
 
   const handleRemoveFile = () => {
+    // Cabut URL object untuk mencegah kebocoran memori
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
     setSelectedFile(null);
     setPreviewUrl('');
     setError('');
@@ -205,6 +263,15 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
       fileInputRef.current.value = '';
     }
   };
+
+  // Bersihkan URL object ketika komponen unmount atau previewUrl berubah
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   return (
     <motion.div
@@ -270,15 +337,18 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
                 Pilih Foto
               </Button>
               
-              <Button
-                onClick={() => cameraInputRef.current?.click()}
-                leftIcon={<CameraIcon />}
-                colorScheme="green"
-                variant="outline"
-                isDisabled={uploading}
-              >
-                Ambil Foto
-              </Button>
+              {/* Hanya tampilkan tombol kamera jika didukung */}
+              {cameraSupported && (
+                <Button
+                  onClick={handleTakePhoto}
+                  leftIcon={<CameraIcon />}
+                  colorScheme="green"
+                  variant="outline"
+                  isDisabled={uploading}
+                >
+                  Ambil Foto
+                </Button>
+              )}
             </HStack>
             
             {error && (
@@ -318,6 +388,9 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
               <VStack spacing={3} w="100%">
                 <Text fontSize="sm" color="blue.600">Mengunggah...</Text>
                 <Progress value={progress} size="sm" colorScheme="blue" w="100%" hasStripe isAnimated />
+                <Text fontSize="xs" color="gray.500">
+                  {progress}% complete
+                </Text>
               </VStack>
             )}
             
