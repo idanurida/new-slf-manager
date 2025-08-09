@@ -1,93 +1,246 @@
-// client/src/pages/dashboard/projects/new.js
-import React, { useState } from 'react'; // ✅ Tambahkan useState
+// src/pages/dashboard/projects/new.js
+import React, { useState } from 'react';
 import {
   Box,
   Heading,
+  Text,
+  Card,
+  CardBody,
+  FormControl,
+  FormLabel,
+  Input,
+  Select,
+  Textarea,
+  Button,
   useToast,
-  Skeleton // ✅ Tambahkan Skeleton untuk loading state
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  HStack,
+  VStack
 } from '@chakra-ui/react';
 import DashboardLayout from '../../../components/layouts/DashboardLayout';
-import ProjectForm from '../../../components/projects/ProjectForm';
-import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'next/router'; // ✅ Hapus axios
+import { useRouter } from 'next/router';
+
+// Mock data statis untuk testing frontend
+const mockUser = {
+  id: 1,
+  name: 'Project Lead Mock User',
+  role: 'project_lead',
+  email: 'project.lead@example.com'
+};
 
 const NewProjectPage = () => {
-  const [user, setUser] = useState({}); // ✅ useState sekarang diimpor
-  const toast = useToast();
   const router = useRouter();
+  const toast = useToast();
+  const [loading, setLoading] = useState(false);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    name: '',
+    owner_name: '',
+    address: '',
+    building_function: '',
+    floors: '',
+    height: '',
+    area: '',
+    location: '',
+    coordinates: '',
+    request_type: 'baru'
+  });
 
-  // ✅ Mock user data untuk development/testing
-  const mockUser = {
-    id: 1,
-    name: 'Mock User',
-    role: 'project_lead', // Sesuaikan role jika perlu
-    email: 'user@example.com'
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  // ✅ Mock useQuery untuk user (tidak perlu token atau axios)
-  const { data: userData, isLoading: userLoading } = useQuery(
-    'user',
-    async () => {
-      // ✅ Simulate delay untuk mock
-      // await new Promise(resolve => setTimeout(resolve, 500)); 
-      // Kembalikan mock data langsung
-      return { user: mockUser };
-    },
-    {
-      // ✅ onSuccess handler
-      onSuccess: (data) => setUser(data.user)
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    // Validasi form
+    if (!formData.name || !formData.owner_name || !formData.address) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fill in all required fields',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+        position: 'top-right'
+      });
+      return;
     }
-  );
-
-  const handleSaveProject = (projectData) => {
-    // ✅ Mock logic untuk save project
-    console.log('Mock saving project:', projectData);
+    
+    // Mock submit project
+    console.log('Submitting new project:', formData);
+    
     toast({
-      title: 'Project Created (Mock)',
-      description: 'Project has been created successfully in mock mode.',
+      title: 'Project Created',
+      description: 'New project has been created successfully (mock)',
       status: 'success',
       duration: 5000,
       isClosable: true,
+      position: 'top-right'
     });
-
-    // Redirect to project detail page (gunakan ID mock jika perlu)
-    // Untuk mock, kita bisa redirect ke dashboard projects atau buat ID dummy
-    if (projectData.name) { // Ganti kondisi jika perlu
-      // Misalnya, redirect ke detail project dengan ID dummy
-      // router.push(`/dashboard/projects/mock-id-${Date.now()}`);
-      // Atau kembali ke list projects
+    
+    // Redirect to projects list
+    setTimeout(() => {
       router.push('/dashboard/projects');
-    }
+    }, 1500);
   };
 
   const handleCancel = () => {
     router.push('/dashboard/projects');
   };
 
-  // ✅ Tampilkan loading state jika perlu
-  if (userLoading) {
-    return (
-      <DashboardLayout user={{}}>
-        <Box p={6}>
-          <Skeleton height="40px" width="200px" mb={6} />
-          <Skeleton height="500px" width="100%" />
-        </Box>
-      </DashboardLayout>
-    );
-  }
-
   return (
-    <DashboardLayout user={user}>
+    <DashboardLayout user={mockUser}>
       <Box p={6}>
-        <Heading mb={6} color="blue.600">
-          Buat Proyek Baru (Mock Mode)
-        </Heading>
+        <Heading mb={6} color="blue.600">Create New Project</Heading>
         
-        <ProjectForm 
-          onSave={handleSaveProject}
-          onCancel={handleCancel}
-          isEditing={false}
-        />
+        <Card>
+          <CardBody>
+            <form onSubmit={handleSubmit}>
+              <VStack spacing={6} align="stretch">
+                <FormControl isRequired>
+                  <FormLabel>Project Name</FormLabel>
+                  <Input
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Enter project name"
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Owner Name</FormLabel>
+                  <Input
+                    name="owner_name"
+                    value={formData.owner_name}
+                    onChange={handleChange}
+                    placeholder="Enter owner name"
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Address</FormLabel>
+                  <Textarea
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    placeholder="Enter project address"
+                    rows={3}
+                  />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>Building Function</FormLabel>
+                  <Select
+                    name="building_function"
+                    value={formData.building_function}
+                    onChange={handleChange}
+                    placeholder="Select building function"
+                  >
+                    <option value="Commercial">Commercial</option>
+                    <option value="Residential">Residential</option>
+                    <option value="Industrial">Industrial</option>
+                    <option value="Mixed">Mixed Use</option>
+                    <option value="Government">Government</option>
+                  </Select>
+                </FormControl>
+
+                <HStack spacing={4}>
+                  <FormControl>
+                    <FormLabel>Floors</FormLabel>
+                    <Input
+                      name="floors"
+                      type="number"
+                      value={formData.floors}
+                      onChange={handleChange}
+                      placeholder="Number of floors"
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel>Height (meters)</FormLabel>
+                    <Input
+                      name="height"
+                      type="number"
+                      value={formData.height}
+                      onChange={handleChange}
+                      placeholder="Building height"
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel>Area (m²)</FormLabel>
+                    <Input
+                      name="area"
+                      type="number"
+                      value={formData.area}
+                      onChange={handleChange}
+                      placeholder="Building area"
+                    />
+                  </FormControl>
+                </HStack>
+
+                <FormControl>
+                  <FormLabel>Location</FormLabel>
+                  <Input
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    placeholder="City/Region"
+                  />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel>Coordinates</FormLabel>
+                  <Input
+                    name="coordinates"
+                    value={formData.coordinates}
+                    onChange={handleChange}
+                    placeholder="Latitude, Longitude"
+                  />
+                </FormControl>
+
+                <FormControl isRequired>
+                  <FormLabel>Request Type</FormLabel>
+                  <Select
+                    name="request_type"
+                    value={formData.request_type}
+                    onChange={handleChange}
+                  >
+                    <option value="baru">Baru (New)</option>
+                    <option value="perpanjangan_slf">Perpanjangan SLF</option>
+                    <option value="perubahan_fungsi">Perubahan Fungsi</option>
+                  </Select>
+                </FormControl>
+
+                <HStack justify="flex-end" spacing={4} mt={4}>
+                  <Button
+                    variant="outline"
+                    onClick={handleCancel}
+                    isDisabled={loading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    colorScheme="blue"
+                    type="submit"
+                    isLoading={loading}
+                    loadingText="Creating..."
+                  >
+                    Create Project
+                  </Button>
+                </HStack>
+              </VStack>
+            </form>
+          </CardBody>
+        </Card>
       </Box>
     </DashboardLayout>
   );
@@ -95,9 +248,8 @@ const NewProjectPage = () => {
 
 export default NewProjectPage;
 
-// ✅ INI YANG PENTING: tambahkan ini di paling bawah untuk menghindari Prerender Error
 export async function getStaticProps() {
   return {
-    props: {} // props kosong untuk mockup/testing
+    props: {} // Kosongkan karena semua data di-mock di komponen
   };
 }
