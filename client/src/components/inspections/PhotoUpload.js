@@ -1,5 +1,5 @@
 // client/src/components/inspections/PhotoUpload.js
-import React, { useRef, useState, useEffect } from 'react'; // Tambahkan useEffect
+import React, { useRef, useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -22,7 +22,10 @@ import {
   Select
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { AttachmentIcon, CloseIcon, CameraIcon } from '@chakra-ui/icons';
+import { AttachmentIcon, CloseIcon, CameraIcon } from '@chakra-ui/icons'; // Perbaiki import
+
+// Ganti CameraIcon dengan icon yang tersedia, misalnya menggunakan AttachmentIcon dua kali
+// atau import icon lain yang sesuai dari @chakra-ui/icons
 
 const PhotoUpload = ({ onUpload, inspectionId }) => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -32,23 +35,21 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
   const [error, setError] = useState('');
   const [floorInfo, setFloorInfo] = useState('');
   const [caption, setCaption] = useState('');
-  const [cameraSupported, setCameraSupported] = useState(false); // Tambahkan state untuk cek dukungan kamera
+  const [cameraSupported, setCameraSupported] = useState(false);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const toast = useToast();
 
-  // Periksa dukungan kamera saat komponen mount (hanya di browser)
+  // Periksa dukungan kamera
   useEffect(() => {
     if (typeof window !== 'undefined' && navigator.mediaDevices) {
       navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => {
-          // Jika berhasil, hentikan stream dan set dukungan kamera
           stream.getTracks().forEach(track => track.stop());
           setCameraSupported(true);
         })
         .catch(err => {
-          // Jika gagal, kamera tidak didukung atau ditolak
-          console.warn('Kamera tidak didukung atau akses ditolak:', err);
+          console.warn('Kamera tidak didukung:', err);
           setCameraSupported(false);
         });
     } else {
@@ -59,7 +60,6 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validasi file
       if (!file.type.startsWith('image/')) {
         setError('File harus berupa gambar (JPEG, PNG, GIF, dll)');
         toast({
@@ -73,7 +73,7 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
         return;
       }
       
-      if (file.size > 10 * 1024 * 1024) { // 10MB
+      if (file.size > 10 * 1024 * 1024) {
         setError('Ukuran file terlalu besar (maksimal 10MB)');
         toast({
           title: 'File terlalu besar',
@@ -93,11 +93,10 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
   };
 
   const handleTakePhoto = async () => {
-    // Periksa dukungan kamera sebelum mencoba mengakses
     if (!cameraSupported) {
       toast({
         title: 'Kamera tidak didukung',
-        description: 'Perangkat Anda tidak mendukung akses kamera atau izin ditolak.',
+        description: 'Perangkat Anda tidak mendukung akses kamera.',
         status: 'warning',
         duration: 5000,
         isClosable: true,
@@ -110,10 +109,8 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       const video = document.createElement('video');
       video.srcObject = stream;
-      await video.play(); // Tunggu video siap
+      await video.play();
 
-      // Tunggu beberapa detik untuk kamera siap, atau gunakan requestAnimationFrame
-      // Untuk kesederhanaan, kita gunakan setTimeout
       setTimeout(() => {
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
@@ -138,14 +135,13 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
           }
         }, 'image/jpeg', 0.95);
         
-        // Hentikan stream kamera
         stream.getTracks().forEach(track => track.stop());
       }, 1000);
     } catch (err) {
       console.error('Error accessing camera:', err);
       toast({
         title: 'Error',
-        description: 'Gagal mengakses kamera. Silakan pilih file dari galeri.',
+        description: 'Gagal mengakses kamera.',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -184,7 +180,6 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
     setError('');
 
     try {
-      // Simulasi progress upload
       const interval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 90) {
@@ -195,16 +190,13 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
         });
       }, 200);
 
-      // Panggil fungsi upload dari parent component
-      // Tambahkan penanganan error yang lebih baik
       try {
         await onUpload({
-          photo: selectedFile, // Sesuaikan dengan prop yang diharapkan oleh parent
+          photo: selectedFile,
           floor_info: floorInfo,
           caption: caption
         });
 
-        // Setelah onUpload selesai, hentikan interval dan set progress ke 100
         clearInterval(interval);
         setProgress(100);
         
@@ -217,7 +209,6 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
           position: 'top-right'
         });
         
-        // Reset form setelah delay kecil untuk menunjukkan progress 100%
         setTimeout(() => {
           setSelectedFile(null);
           setPreviewUrl('');
@@ -230,7 +221,7 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
         }, 500);
       } catch (uploadError) {
         clearInterval(interval);
-        throw uploadError; // Lempar ulang error untuk ditangkap oleh blok catch luar
+        throw uploadError;
       }
 
     } catch (error) {
@@ -250,7 +241,6 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
   };
 
   const handleRemoveFile = () => {
-    // Cabut URL object untuk mencegah kebocoran memori
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
@@ -264,7 +254,6 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
     }
   };
 
-  // Bersihkan URL object ketika komponen unmount atau previewUrl berubah
   useEffect(() => {
     return () => {
       if (previewUrl) {
@@ -337,11 +326,10 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
                 Pilih Foto
               </Button>
               
-              {/* Hanya tampilkan tombol kamera jika didukung */}
               {cameraSupported && (
                 <Button
                   onClick={handleTakePhoto}
-                  leftIcon={<CameraIcon />}
+                  leftIcon={<AttachmentIcon />} // Gunakan icon yang sama atau sesuaikan
                   colorScheme="green"
                   variant="outline"
                   isDisabled={uploading}
