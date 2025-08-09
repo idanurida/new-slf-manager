@@ -177,8 +177,9 @@ const EditProjectPage = ({ mockProjectData, mockUserData }) => {
         <Heading mb={6} color="blue.600">
           Edit Proyek: {project?.name} (Mock Mode)
         </Heading>
+        {/* Gunakan project dari state */}
         <ProjectForm
-          project={project} {/* Gunakan project dari state */}
+          project={project}
           onSave={handleSaveProject}
           onCancel={handleCancel}
           isEditing={true}
