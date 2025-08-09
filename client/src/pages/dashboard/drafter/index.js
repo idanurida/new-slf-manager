@@ -25,7 +25,7 @@ import {
   Tooltip
 } from '@chakra-ui/react';
 import { ViewIcon, EditIcon, DownloadIcon } from '@chakra-ui/icons';
-import DashboardLayout from '../../components/layouts/DashboardLayout';
+import DashboardLayout from '../../../components/layouts/DashboardLayout'
 import { useRouter } from 'next/router';
 
 // Mock data statis untuk testing frontend
