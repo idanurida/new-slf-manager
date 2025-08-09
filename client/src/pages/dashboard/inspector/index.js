@@ -33,11 +33,11 @@ import DashboardLayout from '../../../components/layouts/DashboardLayout';
 import { useRouter } from 'next/router';
 
 // Import komponen dari folder components/inspections/
-import DynamicChecklistForm from '../../../../components/inspections/DynamicChecklistForm';
-import InspectionDetail from '../../../../components/inspections/InspectionDetail';
-import InspectionList from '../../../../components/inspections/InspectionList';
-import PhotoGallery from '../../../../components/inspections/PhotoGallery';
-import PhotoUpload from '../../../../components/inspections/PhotoUpload';
+import DynamicChecklistForm from '../../../components/inspections/DynamicChecklistForm';
+import InspectionDetail from '../../../components/inspections/InspectionDetail';
+import InspectionList from '../../../components/inspections/InspectionList';
+import PhotoGallery from '../../../components/inspections/PhotoGallery';
+import PhotoUpload from '../../../components/inspections/PhotoUpload';
 
 // Mock data statis untuk testing frontend
 const mockUser = {
