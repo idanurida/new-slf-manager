@@ -15,7 +15,7 @@ import {
   useToast
 } from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
-import { scheduleService } from '../services/api';
+import { scheduleService } from 'services/api';
 
 const ScheduleRequestForm = ({ isOpen, onClose, projectId, onScheduleCreated }) => {
   const { register, handleSubmit, reset } = useForm();

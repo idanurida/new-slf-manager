@@ -1,4 +1,4 @@
-// client/src/pages/dashboard/projects/index.js
+// src/pages/dashboard/projects/index.js
 import React, { useState } from 'react';
 import {
   Box,
@@ -15,72 +15,79 @@ import {
   TableContainer,
   Button,
   Badge,
-  Input,
-  Select,
   useToast,
   Skeleton,
-  VStack,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
   HStack,
-  Divider
+  IconButton,
+  Tooltip,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  Select
 } from '@chakra-ui/react';
+import { ViewIcon, EditIcon, AddIcon, SearchIcon } from '@chakra-ui/icons';
 import DashboardLayout from '../../../components/layouts/DashboardLayout';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { useRouter } from 'next/router';
 
-const ProjectsDashboard = () => {
-  const [user, setUser] = useState({});
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [requestTypeFilter, setRequestTypeFilter] = useState('');
-  const [limit, setLimit] = useState(20);
-  const [offset, setOffset] = useState(0);
-  const toast = useToast();
+// Mock data statis untuk testing frontend
+const mockUser = {
+  id: 1,
+  name: 'Project Lead Mock User',
+  role: 'project_lead',
+  email: 'project.lead@example.com'
+};
+
+// Mock projects data
+const mockProjects = [
+  {
+    id: 1,
+    name: 'Project Alpha',
+    owner: 'PT. Bangun Jaya',
+    address: 'Jl. Sudirman No. 1, Jakarta',
+    buildingFunction: 'Commercial',
+    floors: 15,
+    status: 'inspection_in_progress',
+    progress: 75,
+    createdAt: '2023-05-01T00:00:00Z',
+    deadline: '2023-08-30T23:59:59Z'
+  },
+  {
+    id: 2,
+    name: 'Project Beta',
+    owner: 'CV. Maju Terus',
+    address: 'Jl. Thamrin No. 5, Bandung',
+    buildingFunction: 'Residential',
+    floors: 8,
+    status: 'quotation_accepted',
+    progress: 45,
+    createdAt: '2023-05-15T00:00:00Z',
+    deadline: '2023-09-15T23:59:59Z'
+  },
+  {
+    id: 3,
+    name: 'Project Gamma',
+    owner: 'PT. Sejahtera Abadi',
+    address: 'Jl. Diponegoro No. 10, Surabaya',
+    buildingFunction: 'Industrial',
+    floors: 3,
+    status: 'slf_issued',
+    progress: 100,
+    createdAt: '2023-04-01T00:00:00Z',
+    deadline: '2023-06-30T23:59:59Z'
+  }
+];
+
+const ProjectsPage = () => {
   const router = useRouter();
-
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
-  const {  userData } = useQuery(
-    'user',
-    async () => {
-      const response = await axios.get('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data.user;
-    },
-    { 
-      enabled: !!token,
-      onSuccess: (data) => setUser(data.user)
-    }
-  );
-
-  const {  projectsData, isLoading, refetch } = useQuery(
-    ['projects', search, statusFilter, requestTypeFilter, limit, offset],
-    async () => {
-      const params = {
-        search: search || undefined,
-        status: statusFilter || undefined,
-        request_type: requestTypeFilter || undefined,
-        limit,
-        offset
-      };
-
-      const response = await axios.get('/api/projects', {
-        params,
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data;
-    },
-    { enabled: !!token }
-  );
-
-  const handleViewProject = (projectId) => {
-    router.push(`/dashboard/projects/${projectId}`);
-  };
-
-  const handleCreateProject = () => {
-    router.push('/dashboard/projects/new');
-  };
+  const [projects, setProjects] = useState(mockProjects);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
   const statusColors = {
     draft: 'gray',
@@ -101,208 +108,162 @@ const ProjectsDashboard = () => {
     cancelled: 'red'
   };
 
-  if (isLoading) {
-    return (
-      <DashboardLayout user={userData || {}}>
-        <Box p={6}>
-          <Heading mb={6} color="blue.600">Projects Dashboard</Heading>
-          
-          <Skeleton height="40px" width="200px" mb={6} />
-          
-          <VStack spacing={4} mb={6}>
-            <HStack spacing={4}>
-              <Skeleton height="40px" width="200px" />
-              <Skeleton height="40px" width="150px" />
-              <Skeleton height="40px" width="150px" />
-              <Skeleton height="40px" width="100px" />
-            </HStack>
-          </VStack>
-          
-          <Card>
-            <CardBody>
-              <Skeleton height="30px" width="150px" mb={4} />
-              <VStack spacing={3}>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} height="60px" width="100%" />
-                ))}
-              </VStack>
-            </CardBody>
-          </Card>
-        </Box>
-      </DashboardLayout>
-    );
-  }
+  const handleViewProject = (projectId) => {
+    // Mock view project
+    console.log('Viewing project:', projectId);
+    router.push(`/dashboard/projects/${projectId}`);
+  };
+
+  const handleEditProject = (projectId) => {
+    // Mock edit project
+    console.log('Editing project:', projectId);
+    router.push(`/dashboard/projects/${projectId}/edit`);
+  };
+
+  const handleCreateNewProject = () => {
+    // Mock create new project
+    console.log('Creating new project');
+    toast({
+      title: 'Create New Project',
+      description: 'Opening create project form (mock)',
+      status: 'info',
+      duration: 3000,
+      isClosable: true
+    });
+  };
+
+  // Filter projects based on search term and status filter
+  const filteredProjects = projects.filter(project => {
+    const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         project.owner.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
-    <DashboardLayout user={userData || {}}>
+    <DashboardLayout user={mockUser}>
       <Box p={6}>
-        <VStack spacing={6} align="stretch">
-          <HStack justify="space-between">
-            <Heading color="blue.600">Projects Dashboard</Heading>
-            <Button 
-              colorScheme="green" 
-              onClick={handleCreateProject}
-              size="lg"
-            >
-              Create New Project
-            </Button>
-          </HStack>
-          
-          <Divider />
-          
-          <Card>
-            <CardBody>
-              <VStack spacing={4} align="stretch">
-                {/* Filter Section */}
-                <HStack spacing={4} wrap="wrap">
-                  <Input
-                    placeholder="Search projects..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    width="250px"
-                  />
-                  
-                  <Select
-                    placeholder="Filter by Status"
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    width="200px"
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="quotation_sent">Quotation Sent</option>
-                    <option value="quotation_accepted">Quotation Accepted</option>
-                    <option value="contract_signed">Contract Signed</option>
-                    <option value="spk_issued">SPK Issued</option>
-                    <option value="spk_accepted">SPK Accepted</option>
-                    <option value="inspection_scheduled">Inspection Scheduled</option>
-                    <option value="inspection_in_progress">Inspection In Progress</option>
-                    <option value="inspection_done">Inspection Done</option>
-                    <option value="report_draft">Report Draft</option>
-                    <option value="report_reviewed">Report Reviewed</option>
-                    <option value="report_sent_to_client">Report Sent to Client</option>
-                    <option value="waiting_gov_response">Waiting Gov Response</option>
-                    <option value="slf_issued">SLF Issued</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                  </Select>
-                  
-                  <Select
-                    placeholder="Filter by Request Type"
-                    value={requestTypeFilter}
-                    onChange={(e) => setRequestTypeFilter(e.target.value)}
-                    width="200px"
-                  >
-                    <option value="baru">SLF Baru</option>
-                    <option value="perpanjangan_slf">Perpanjangan SLF</option>
-                    <option value="perubahan_fungsi">Perubahan Fungsi</option>
-                    <option value="pascabencana">Pasca Bencana</option>
-                  </Select>
-                  
-                  <Select
-                    placeholder="Items per page"
-                    value={limit}
-                    onChange={(e) => setLimit(parseInt(e.target.value))}
-                    width="150px"
-                  >
-                    <option value={10}>10 items</option>
-                    <option value={20}>20 items</option>
-                    <option value={50}>50 items</option>
-                    <option value={100}>100 items</option>
-                  </Select>
-                </HStack>
-                
-                {/* Projects Table */}
-                <TableContainer>
-                  <Table variant="simple">
-                    <Thead>
-                      <Tr>
-                        <Th>Project Name</Th>
-                        <Th>Owner</Th>
-                        <Th>Building Function</Th>
-                        <Th>Floors</Th>
-                        <Th>Request Type</Th>
-                        <Th>Status</Th>
-                        <Th>Actions</Th>
-                      </Tr>
-                    </Thead>
-                    <Tbody>
-                      {projectsData && projectsData.projects && projectsData.projects.length > 0 ? (
-                        projectsData.projects.map((project) => (
-                          <Tr key={project.id}>
-                            <Td>
-                              <Text fontWeight="bold">{project.name}</Text>
-                              <Text fontSize="sm" color="gray.500">
-                                {project.address}
-                              </Text>
-                            </Td>
-                            <Td>{project.owner_name}</Td>
-                            <Td>{project.building_function}</Td>
-                            <Td>{project.floors}</Td>
-                            <Td>
-                              <Badge colorScheme="blue">
-                                {project.request_type.replace(/_/g, ' ')}
-                              </Badge>
-                            </Td>
-                            <Td>
-                              <Badge colorScheme={statusColors[project.status] || 'gray'}>
-                                {project.status.replace(/_/g, ' ')}
-                              </Badge>
-                            </Td>
-                            <Td>
-                              <Button 
-                                size="sm" 
-                                colorScheme="blue"
+        <HStack justify="space-between" mb={6}>
+          <Heading color="blue.600">Projects Management</Heading>
+          <Button 
+            colorScheme="blue" 
+            leftIcon={<AddIcon />}
+            onClick={handleCreateNewProject}
+          >
+            Create New Project
+          </Button>
+        </HStack>
+
+        {/* Filter Section */}
+        <Card mb={6}>
+          <CardBody>
+            <HStack spacing={4}>
+              <InputGroup flex="1">
+                <InputLeftElement pointerEvents="none">
+                  <SearchIcon color="gray.300" />
+                </InputLeftElement>
+                <Input
+                  placeholder="Search projects..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </InputGroup>
+              <Select
+                placeholder="All Status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                width="200px"
+              >
+                <option value="all">All Status</option>
+                <option value="draft">Draft</option>
+                <option value="quotation_accepted">Quotation Accepted</option>
+                <option value="inspection_in_progress">Inspection In Progress</option>
+                <option value="slf_issued">SLF Issued</option>
+              </Select>
+            </HStack>
+          </CardBody>
+        </Card>
+
+        <Card>
+          <CardBody>
+            {filteredProjects.length > 0 ? (
+              <TableContainer>
+                <Table variant="simple">
+                  <Thead>
+                    <Tr>
+                      <Th>Project Name</Th>
+                      <Th>Owner</Th>
+                      <Th>Building Function</Th>
+                      <Th>Floors</Th>
+                      <Th>Status</Th>
+                      <Th>Progress</Th>
+                      <Th>Created At</Th>
+                      <Th>Actions</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {filteredProjects.map(project => (
+                      <Tr key={project.id}>
+                        <Td>
+                          <Text fontWeight="bold">{project.name}</Text>
+                          <Text fontSize="sm" color="gray.500">{project.address}</Text>
+                        </Td>
+                        <Td>{project.owner}</Td>
+                        <Td>{project.buildingFunction}</Td>
+                        <Td>{project.floors}</Td>
+                        <Td>
+                          <Badge colorScheme={statusColors[project.status] || 'gray'}>
+                            {project.status.replace(/_/g, ' ')}
+                          </Badge>
+                        </Td>
+                        <Td>{project.progress}%</Td>
+                        <Td>{new Date(project.createdAt).toLocaleDateString('id-ID')}</Td>
+                        <Td>
+                          <HStack spacing={2}>
+                            <Tooltip label="View Project">
+                              <IconButton
+                                icon={<ViewIcon />}
+                                size="sm"
                                 onClick={() => handleViewProject(project.id)}
-                              >
-                                View Details
-                              </Button>
-                            </Td>
-                          </Tr>
-                        ))
-                      ) : (
-                        <Tr>
-                          <Td colSpan={7} textAlign="center">
-                            <Text color="gray.500">No projects found</Text>
-                          </Td>
-                        </Tr>
-                      )}
-                    </Tbody>
-                  </Table>
-                </TableContainer>
-                
-                {/* Pagination */}
-                {projectsData && projectsData.total > limit && (
-                  <HStack justify="space-between" mt={4}>
-                    <Text fontSize="sm" color="gray.500">
-                      Showing {offset + 1} to {Math.min(offset + limit, projectsData.total)} of {projectsData.total} projects
-                    </Text>
-                    
-                    <HStack spacing={2}>
-                      <Button
-                        size="sm"
-                        onClick={() => setOffset(Math.max(0, offset - limit))}
-                        isDisabled={offset === 0}
-                      >
-                        Previous
-                      </Button>
-                      
-                      <Button
-                        size="sm"
-                        onClick={() => setOffset(offset + limit)}
-                        isDisabled={offset + limit >= projectsData.total}
-                      >
-                        Next
-                      </Button>
-                    </HStack>
-                  </HStack>
-                )}
-              </VStack>
-            </CardBody>
-          </Card>
-        </VStack>
+                              />
+                            </Tooltip>
+                            <Tooltip label="Edit Project">
+                              <IconButton
+                                icon={<EditIcon />}
+                                size="sm"
+                                colorScheme="blue"
+                                onClick={() => handleEditProject(project.id)}
+                              />
+                            </Tooltip>
+                          </HStack>
+                        </Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <Alert status="info">
+                <AlertIcon />
+                <AlertTitle>No Projects Found</AlertTitle>
+                <AlertDescription>
+                  {searchTerm || statusFilter !== 'all' 
+                    ? 'No projects match your search criteria.'
+                    : 'There are no projects created yet.'}
+                </AlertDescription>
+              </Alert>
+            )}
+          </CardBody>
+        </Card>
       </Box>
     </DashboardLayout>
   );
 };
 
-export default ProjectsDashboard;
+export default ProjectsPage;
+
+export async function getStaticProps() {
+  return {
+    props: {} // Kosongkan karena semua data di-mock di komponen
+  };
+}

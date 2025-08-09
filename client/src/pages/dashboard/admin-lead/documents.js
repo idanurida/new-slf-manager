@@ -1,156 +1,238 @@
-// client/src/pages/dashboard/admin-lead/documents.js
-import React, { useState, useEffect } from 'react';
+// src/pages/dashboard/admin-lead/documents.js
+import React, { useState } from 'react';
 import {
   Box,
   Heading,
   Text,
   Card,
   CardBody,
-  SimpleGrid,
-  Stat,
-  StatLabel,
-  StatNumber,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  TableContainer,
+  Button,
+  Badge,
   useToast,
-  Divider,
-  Button
+  Skeleton,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  HStack,
+  IconButton,
+  Tooltip
 } from '@chakra-ui/react';
+import { ViewIcon, DownloadIcon, DeleteIcon } from '@chakra-ui/icons';
 import DashboardLayout from '../../../components/layouts/DashboardLayout';
-import DocumentUpload from '../../../components/admin/DocumentUpload';
-import DocumentList from '../../../components/admin/DocumentList';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { useRouter } from 'next/router';
 
-const AdminLeadDocuments = () => {
-  const [user, setUser] = useState({});
-  const [stats, setStats] = useState({
-    totalDocuments: 0,
-    pendingVerification: 0,
-    verifiedDocuments: 0,
-    rejectedDocuments: 0
-  });
-  const toast = useToast();
+// Mock data statis untuk testing frontend
+const mockUser = {
+  id: 1,
+  name: 'Admin Lead Mock User',
+  role: 'admin_lead',
+  email: 'admin.lead@example.com'
+};
+
+// Mock documents data
+const mockDocuments = [
+  {
+    id: 1,
+    name: 'SLF_Document_Alpha.pdf',
+    type: 'SLF',
+    size: 2457600, // 2.4 MB
+    uploadedBy: 'John Doe',
+    uploadedAt: '2023-06-15T10:30:00Z',
+    status: 'approved',
+    projectId: 1,
+    projectName: 'Project Alpha'
+  },
+  {
+    id: 2,
+    name: 'Inspection_Report_Beta.docx',
+    type: 'Inspection Report',
+    size: 1835008, // 1.8 MB
+    uploadedBy: 'Jane Smith',
+    uploadedAt: '2023-06-10T14:20:00Z',
+    status: 'pending',
+    projectId: 2,
+    projectName: 'Project Beta'
+  },
+  {
+    id: 3,
+    name: 'Payment_Proof_Gamma.jpg',
+    type: 'Payment Proof',
+    size: 3145728, // 3.1 MB
+    uploadedBy: 'Bob Johnson',
+    uploadedAt: '2023-06-05T09:15:00Z',
+    status: 'rejected',
+    projectId: 3,
+    projectName: 'Project Gamma'
+  }
+];
+
+// Helper function untuk format bytes
+const formatBytes = (bytes, decimals = 2) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+};
+
+const AdminDocumentsPage = () => {
   const router = useRouter();
-  const { projectId } = router.query;
+  const [documents, setDocuments] = useState(mockDocuments);
+  const [loading, setLoading] = useState(false);
+  const toast = useToast();
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const statusColors = {
+    pending: 'yellow',
+    approved: 'green',
+    rejected: 'red'
+  };
 
-  const {  userData } = useQuery(
-    'user',
-    async () => {
-      const response = await axios.get('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data.user;
-    },
-    { 
-      enabled: !!token,
-      onSuccess: (data) => setUser(data.user)
-    }
-  );
-
-  const {  statsData, refetch: refetchStats } = useQuery(
-    'admin-document-stats',
-    async () => {
-      const response = await axios.get('/api/admin/documents/stats', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data.stats;
-    },
-    { 
-      enabled: !!token,
-      onSuccess: (data) => setStats(data)
-    }
-  );
-
-  const handleUploadSuccess = (document) => {
+  const handleViewDocument = (documentId) => {
+    // Mock view document
+    console.log('Viewing document:', documentId);
     toast({
-      title: 'Dokumen berhasil diunggah',
-      description: `Dokumen "${document.title}" telah berhasil diunggah`,
-      status: 'success',
+      title: 'View Document',
+      description: `Opening document #${documentId} (mock)`,
+      status: 'info',
       duration: 3000,
-      isClosable: true,
-      position: 'top-right'
+      isClosable: true
     });
-    
-    // Refresh stats
-    refetchStats();
+  };
+
+  const handleDownloadDocument = (documentId) => {
+    // Mock download document
+    console.log('Downloading document:', documentId);
+    toast({
+      title: 'Download Document',
+      description: `Downloading document #${documentId} (mock)`,
+      status: 'info',
+      duration: 3000,
+      isClosable: true
+    });
+  };
+
+  const handleDeleteDocument = (documentId) => {
+    if (window.confirm('Are you sure you want to delete this document?')) {
+      // Mock delete document
+      console.log('Deleting document:', documentId);
+      setDocuments(documents.filter(doc => doc.id !== documentId));
+      toast({
+        title: 'Document Deleted',
+        description: `Document #${documentId} has been deleted (mock)`,
+        status: 'success',
+        duration: 3000,
+        isClosable: true
+      });
+    }
+  };
+
+  const handleUploadNewDocument = () => {
+    // Mock upload new document
+    console.log('Uploading new document');
+    toast({
+      title: 'Upload Document',
+      description: 'Opening upload document form (mock)',
+      status: 'info',
+      duration: 3000,
+      isClosable: true
+    });
   };
 
   return (
-    <DashboardLayout user={user}>
+    <DashboardLayout user={mockUser}>
       <Box p={6}>
-        <Heading mb={6} color="blue.600">
-          Manajemen Dokumen
-        </Heading>
-        
-        <Text fontSize="lg" color="gray.600" mb={8}>
-          Upload dan kelola dokumen terkait proyek SLF
-        </Text>
+        <HStack justify="space-between" mb={6}>
+          <Heading color="blue.600">Document Management</Heading>
+          <Button 
+            colorScheme="blue" 
+            onClick={handleUploadNewDocument}
+          >
+            Upload New Document
+          </Button>
+        </HStack>
 
-        {/* Stats Cards */}
-        <SimpleGrid columns={{ base: 1, md: 4 }} spacing={6} mb={8}>
-          <Card>
-            <CardBody>
-              <Stat>
-                <StatLabel>Total Dokumen</StatLabel>
-                <StatNumber color="blue.500">{stats.totalDocuments}</StatNumber>
-              </Stat>
-            </CardBody>
-          </Card>
-          
-          <Card>
-            <CardBody>
-              <Stat>
-                <StatLabel>Menunggu Verifikasi</StatLabel>
-                <StatNumber color="yellow.500">{stats.pendingVerification}</StatNumber>
-              </Stat>
-            </CardBody>
-          </Card>
-          
-          <Card>
-            <CardBody>
-              <Stat>
-                <StatLabel>Diverifikasi</StatLabel>
-                <StatNumber color="green.500">{stats.verifiedDocuments}</StatNumber>
-              </Stat>
-            </CardBody>
-          </Card>
-          
-          <Card>
-            <CardBody>
-              <Stat>
-                <StatLabel>Ditolak</StatLabel>
-                <StatNumber color="red.500">{stats.rejectedDocuments}</StatNumber>
-              </Stat>
-            </CardBody>
-          </Card>
-        </SimpleGrid>
-
-        <Divider mb={8} />
-
-        {/* Document Upload Section */}
-        <Card mb={8}>
-          <CardBody>
-            <Heading size="md" mb={4} color="gray.700">
-              Upload Dokumen Baru
-            </Heading>
-            <DocumentUpload 
-              projectId={projectId}
-              onUploadSuccess={handleUploadSuccess}
-            />
-          </CardBody>
-        </Card>
-
-        <Divider mb={8} />
-
-        {/* Document List Section */}
         <Card>
           <CardBody>
-            <Heading size="md" mb={4} color="gray.700">
-              Daftar Dokumen Proyek
-            </Heading>
-            <DocumentList projectId={projectId} />
+            {documents.length > 0 ? (
+              <TableContainer>
+                <Table variant="simple">
+                  <Thead>
+                    <Tr>
+                      <Th>Document Name</Th>
+                      <Th>Project</Th>
+                      <Th>Type</Th>
+                      <Th>Size</Th>
+                      <Th>Uploaded By</Th>
+                      <Th>Uploaded At</Th>
+                      <Th>Status</Th>
+                      <Th>Actions</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {documents.map(document => (
+                      <Tr key={document.id}>
+                        <Td>
+                          <Text fontWeight="bold">{document.name}</Text>
+                        </Td>
+                        <Td>{document.projectName}</Td>
+                        <Td>{document.type}</Td>
+                        <Td>{formatBytes(document.size)}</Td>
+                        <Td>{document.uploadedBy}</Td>
+                        <Td>{new Date(document.uploadedAt).toLocaleDateString('id-ID')}</Td>
+                        <Td>
+                          <Badge colorScheme={statusColors[document.status]}>
+                            {document.status}
+                          </Badge>
+                        </Td>
+                        <Td>
+                          <HStack spacing={2}>
+                            <Tooltip label="View Document">
+                              <IconButton
+                                icon={<ViewIcon />}
+                                size="sm"
+                                onClick={() => handleViewDocument(document.id)}
+                              />
+                            </Tooltip>
+                            <Tooltip label="Download Document">
+                              <IconButton
+                                icon={<DownloadIcon />}
+                                size="sm"
+                                onClick={() => handleDownloadDocument(document.id)}
+                              />
+                            </Tooltip>
+                            <Tooltip label="Delete Document">
+                              <IconButton
+                                icon={<DeleteIcon />}
+                                size="sm"
+                                colorScheme="red"
+                                onClick={() => handleDeleteDocument(document.id)}
+                              />
+                            </Tooltip>
+                          </HStack>
+                        </Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <Alert status="info">
+                <AlertIcon />
+                <AlertTitle>No Documents Found</AlertTitle>
+                <AlertDescription>
+                  There are no documents uploaded yet.
+                </AlertDescription>
+              </Alert>
+            )}
           </CardBody>
         </Card>
       </Box>
@@ -158,4 +240,10 @@ const AdminLeadDocuments = () => {
   );
 };
 
-export default AdminLeadDocuments;
+export default AdminDocumentsPage;
+
+export async function getStaticProps() {
+  return {
+    props: {} // Kosongkan karena semua data di-mock di komponen
+  };
+}

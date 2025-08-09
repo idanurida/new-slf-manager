@@ -21,47 +21,103 @@ import {
 } from '@chakra-ui/react';
 import DashboardLayout from '../../../../components/layouts/DashboardLayout';
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { useRouter } from 'next/router';
 
-const ProjectDetail = () => {
-  const [user, setUser] = useState({});
-  const [project, setProject] = useState(null);
+// Mock data untuk development/testing
+const mockUser = {
+  id: 1,
+  name: 'Mock User',
+  role: 'project_lead',
+  email: 'user@example.com'
+};
+
+// Mock data project berdasarkan ID
+const getMockProject = (id) => {
+  const mockProjects = {
+    '1': {
+      id: '1',
+      name: 'Mock Project Alpha',
+      owner_name: 'PT. Bangun Jaya',
+      address: 'Jl. Sudirman No. 1, Jakarta',
+      building_function: 'Commercial',
+      floors: 15,
+      height: 60,
+      area: 5000,
+      location: 'Jakarta Pusat',
+      coordinates: '-6.2146, 106.8451',
+      request_type: 'baru',
+      status: 'inspection_in_progress',
+      projectLead: { name: 'John Doe', email: 'john@example.com' },
+      client: { name: 'Client A', email: 'clienta@example.com' }
+    },
+    '2': {
+      id: '2',
+      name: 'Mock Project Beta',
+      owner_name: 'CV. Maju Terus',
+      address: 'Jl. Thamrin No. 5, Bandung',
+      building_function: 'Residential',
+      floors: 8,
+      height: 24,
+      area: 2000,
+      location: 'Bandung',
+      coordinates: '-6.9175, 107.6191',
+      request_type: 'perpanjangan_slf',
+      status: 'quotation_accepted',
+      projectLead: { name: 'Jane Smith', email: 'jane@example.com' },
+      client: { name: 'Client B', email: 'clientb@example.com' }
+    },
+    '3': {
+      id: '3',
+      name: 'Mock Project Gamma',
+      owner_name: 'PT. Sejahtera Abadi',
+      address: 'Jl. Diponegoro No. 10, Surabaya',
+      building_function: 'Industrial',
+      floors: 3,
+      height: 15,
+      area: 1500,
+      location: 'Surabaya',
+      coordinates: '-7.2575, 112.7521',
+      request_type: 'perubahan_fungsi',
+      status: 'slf_issued',
+      projectLead: { name: 'Bob Johnson', email: 'bob@example.com' },
+      client: { name: 'Client C', email: 'clientc@example.com' }
+    }
+  };
+
+  return mockProjects[id] || null;
+};
+
+const ProjectDetail = ({ mockProjectData, mockUserData }) => {
+  const [user, setUser] = useState(mockUserData || {});
+  const [project, setProject] = useState(mockProjectData || null);
   const toast = useToast();
   const router = useRouter();
   const { id } = router.query;
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
-  const {  userData } = useQuery(
-    'user',
-    async () => {
-      const response = await axios.get('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data.user;
+  // Mock useQuery untuk user dengan konfigurasi yang benar
+  const { data: userData, isLoading: userLoading } = useQuery({
+    queryKey: ['user'],
+    queryFn: async () => {
+      return { user: mockUserData || mockUser };
     },
-    { 
-      enabled: !!token,
-      onSuccess: (data) => setUser(data.user)
-    }
-  );
+    enabled: !!mockUserData,
+    staleTime: 1000 * 60 * 5,
+    onSuccess: (data) => setUser(data.user),
+  });
 
-  const {  projectData, isLoading } = useQuery(
-    ['project', id],
-    async () => {
+  // Mock useQuery untuk project dengan konfigurasi yang benar
+  const { data: projectData, isLoading: projectLoading } = useQuery({
+    queryKey: ['project', id],
+    queryFn: async () => {
       if (!id) return null;
-      
-      const response = await axios.get(`/api/projects/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data;
+      return mockProjectData || getMockProject(id);
     },
-    { 
-      enabled: !!token && !!id,
-      onSuccess: (data) => setProject(data)
-    }
-  );
+    enabled: !!id && !mockProjectData,
+    staleTime: 1000 * 60 * 5,
+    onSuccess: (data) => setProject(data),
+  });
+
+  const isLoading = userLoading || projectLoading;
 
   const handleEditProject = () => {
     router.push(`/dashboard/projects/${id}/edit`);
@@ -102,6 +158,30 @@ const ProjectDetail = () => {
     cancelled: 'red'
   };
 
+  // Handle fallback state
+  if (router.isFallback) {
+    return (
+      <DashboardLayout user={user}>
+        <Box p={6}>
+          <Skeleton height="40px" width="300px" mb={6} />
+          <VStack spacing={4} align="stretch">
+            <Card>
+              <CardBody>
+                <Skeleton height="30px" width="200px" mb={4} />
+                <VStack spacing={3} align="stretch">
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                    <Skeleton key={i} height="20px" width="100%" />
+                  ))}
+                </VStack>
+              </CardBody>
+            </Card>
+          </VStack>
+        </Box>
+      </DashboardLayout>
+    );
+  }
+
+  // Handle loading state
   if (isLoading) {
     return (
       <DashboardLayout user={userData || {}}>
@@ -138,9 +218,10 @@ const ProjectDetail = () => {
     );
   }
 
-  if (!project) {
+  // Handle error state
+  if (!project && !mockProjectData) {
     return (
-      <DashboardLayout user={userData || {}}>
+      <DashboardLayout user={userData || user || {}}>
         <Box p={6}>
           <Heading mb={6} color="blue.600">Project Details</Heading>
           
@@ -161,12 +242,14 @@ const ProjectDetail = () => {
     );
   }
 
+  const projectToDisplay = mockProjectData || project;
+
   return (
-    <DashboardLayout user={userData || {}}>
+    <DashboardLayout user={userData || user || {}}>
       <Box p={6}>
         <VStack spacing={6} align="stretch">
           <HStack justify="space-between">
-            <Heading color="blue.600">Project Details: {project.name}</Heading>
+            <Heading color="blue.600">Project Details: {projectToDisplay?.name}</Heading>
             <Button 
               colorScheme="blue" 
               onClick={handleEditProject}
@@ -186,82 +269,82 @@ const ProjectDetail = () => {
                 <VStack spacing={3} align="stretch">
                   <HStack justify="space-between">
                     <Text fontWeight="semibold">Project Name:</Text>
-                    <Text>{project.name}</Text>
+                    <Text>{projectToDisplay?.name}</Text>
                   </HStack>
                   
                   <HStack justify="space-between">
                     <Text fontWeight="semibold">Owner Name:</Text>
-                    <Text>{project.owner_name}</Text>
+                    <Text>{projectToDisplay?.owner_name}</Text>
                   </HStack>
                   
                   <HStack justify="space-between">
                     <Text fontWeight="semibold">Address:</Text>
-                    <Text>{project.address}</Text>
+                    <Text>{projectToDisplay?.address}</Text>
                   </HStack>
                   
                   <HStack justify="space-between">
                     <Text fontWeight="semibold">Building Function:</Text>
-                    <Text>{project.building_function}</Text>
+                    <Text>{projectToDisplay?.building_function}</Text>
                   </HStack>
                   
                   <HStack justify="space-between">
                     <Text fontWeight="semibold">Floors:</Text>
-                    <Text>{project.floors}</Text>
+                    <Text>{projectToDisplay?.floors}</Text>
                   </HStack>
                   
-                  {project.height && (
+                  {projectToDisplay?.height && (
                     <HStack justify="space-between">
                       <Text fontWeight="semibold">Height:</Text>
-                      <Text>{project.height} meters</Text>
+                      <Text>{projectToDisplay.height} meters</Text>
                     </HStack>
                   )}
                   
-                  {project.area && (
+                  {projectToDisplay?.area && (
                     <HStack justify="space-between">
                       <Text fontWeight="semibold">Area:</Text>
-                      <Text>{project.area} m²</Text>
+                      <Text>{projectToDisplay.area} m²</Text>
                     </HStack>
                   )}
                   
-                  {project.location && (
+                  {projectToDisplay?.location && (
                     <HStack justify="space-between">
                       <Text fontWeight="semibold">Location:</Text>
-                      <Text>{project.location}</Text>
+                      <Text>{projectToDisplay.location}</Text>
                     </HStack>
                   )}
                   
-                  {project.coordinates && (
+                  {projectToDisplay?.coordinates && (
                     <HStack justify="space-between">
                       <Text fontWeight="semibold">Coordinates:</Text>
-                      <Text>{project.coordinates}</Text>
+                      <Text>{projectToDisplay.coordinates}</Text>
                     </HStack>
                   )}
                   
                   <HStack justify="space-between">
                     <Text fontWeight="semibold">Request Type:</Text>
                     <Badge colorScheme="blue">
-                      {project.request_type.replace(/_/g, ' ')}
+                      {projectToDisplay?.request_type?.replace(/_/g, ' ') || 'N/A'}
                     </Badge>
                   </HStack>
                   
                   <HStack justify="space-between">
                     <Text fontWeight="semibold">Status:</Text>
-                    <Badge colorScheme={statusColors[project.status] || 'gray'}>
-                      {project.status.replace(/_/g, ' ')}
+                    <Badge colorScheme={statusColors[projectToDisplay?.status] || 'gray'}>
+                      {projectToDisplay?.status?.replace(/_/g, ' ') || 'N/A'}
                     </Badge>
                   </HStack>
                   
-                  {project.projectLead && (
+                  {projectToDisplay?.projectLead && (
                     <HStack justify="space-between">
                       <Text fontWeight="semibold">Project Lead:</Text>
-                      <Text>{project.projectLead.name} ({project.projectLead.email})</Text>
+                      <Text>{projectToDisplay.projectLead.name} ({projectToDisplay.projectLead.email})</Text>
                     </HStack>
                   )}
                   
-                  {project.client && (
+                  {projectToDisplay?.client && (
                     <HStack justify="space-between">
                       <Text fontWeight="semibold">Client:</Text>
-                      <Text>{project.client.name} ({project.client.email})</Text>
+                      <Text>{projectToDisplay.client.name} ({projectToDisplay.client.email})</Text>
                     </HStack>
                   )}
                 </VStack>
@@ -410,3 +493,60 @@ const ProjectDetail = () => {
 };
 
 export default ProjectDetail;
+
+// getStaticPaths untuk dynamic routes
+export async function getStaticPaths() {
+  try {
+    const paths = [
+      { params: { id: '1' } },
+      { params: { id: '2' } },
+      { params: { id: '3' } },
+    ];
+
+    return {
+      paths,
+      fallback: 'blocking'
+    };
+  } catch (error) {
+    console.error('Error in getStaticPaths:', error);
+    return {
+      paths: [],
+      fallback: 'blocking'
+    };
+  }
+}
+
+// getStaticProps untuk prerender data
+export async function getStaticProps(context) {
+  const { id } = context.params;
+
+  try {
+    // Validasi ID
+    if (!id || typeof id !== 'string') {
+      return {
+        notFound: true,
+      };
+    }
+
+    const mockProjectData = getMockProject(id);
+    
+    if (!mockProjectData) {
+      return {
+        notFound: true,
+      };
+    }
+
+    return {
+      props: {
+        mockProjectData,
+        mockUserData: mockUser
+      },
+      revalidate: 60,
+    };
+  } catch (error) {
+    console.error('Error in getStaticProps:', error);
+    return {
+      notFound: true,
+    };
+  }
+}

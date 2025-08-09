@@ -1,4 +1,5 @@
-import React from 'react';
+// src/pages/dashboard/project-lead/index.js
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Heading,
@@ -18,50 +19,148 @@ import {
   TableContainer,
   Button,
   Badge,
-  useToast
+  Skeleton,
+  SkeletonText
 } from '@chakra-ui/react';
 import DashboardLayout from '../../../components/layouts/DashboardLayout';
 import TodoList from '../../../components/dashboard/TodoList';
-import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router';
-import { authService, projectService } from 'services/api';
+
+// Mock data statis
+const mockUser = {
+  id: 1,
+  name: 'Project Lead Mock User',
+  role: 'project_lead',
+  email: 'project.lead@example.com'
+};
+
+const mockStats = {
+  totalProjects: 12,
+  activeProjects: 8,
+  completedProjects: 3,
+  overdueProjects: 1
+};
+
+const mockProjects = [
+  {
+    id: 1,
+    name: 'Project Alpha',
+    client: 'Client A',
+    progress: 75,
+    status: 'active',
+    deadline: '2023-07-15'
+  },
+  {
+    id: 2,
+    name: 'Project Beta',
+    client: 'Client B',
+    progress: 45,
+    status: 'active',
+    deadline: '2023-08-20'
+  },
+  {
+    id: 3,
+    name: 'Project Gamma',
+    client: 'Client C',
+    progress: 100,
+    status: 'completed',
+    deadline: '2023-05-30'
+  }
+];
 
 const ProjectLeadDashboard = () => {
   const router = useRouter();
-
-  const { data: user, isLoading: userLoading } = useQuery('user', authService.getMe);
-  const { data: stats, isLoading: statsLoading } = useQuery('projectLeadStats', projectService.getStats); // Placeholder
-  const { data: assignedProjects, isLoading: projectsLoading } = useQuery('assignedProjects', projectService.getAllProjects);
-
-  const loading = userLoading || statsLoading || projectsLoading;
+  const [loading, setLoading] = useState(false);
 
   const handleViewProject = (projectId) => {
     router.push(`/dashboard/project-lead/projects/${projectId}`);
   };
 
   const statusColors = {
-    // ... status colors
+    active: 'blue',
+    completed: 'green',
+    pending: 'yellow',
+    overdue: 'red'
   };
 
+  // Tidak perlu useEffect karena semua data sudah statis
+
+  const StatCard = ({ label, value }) => (
+    <Card>
+      <CardBody>
+        <Stat>
+          <StatLabel>{label}</StatLabel>
+          <StatNumber>{value}</StatNumber>
+        </Stat>
+      </CardBody>
+    </Card>
+  );
+
   return (
-    <DashboardLayout user={user?.data}>
+    <DashboardLayout user={mockUser}>
       <Box p={6}>
         <Heading mb={6} color="blue.600">Project Lead Dashboard</Heading>
-        
+
         <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={8}>
-          {/* ... Stat Cards ... */}
+          <StatCard label="Total Projects" value={mockStats.totalProjects} />
+          <StatCard label="Active Projects" value={mockStats.activeProjects} />
+          <StatCard label="Completed Projects" value={mockStats.completedProjects} />
+          <StatCard label="Overdue Projects" value={mockStats.overdueProjects} />
         </SimpleGrid>
 
         <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
           <Card>
             <CardBody>
               <Heading size="md" mb={4}>Assigned Projects</Heading>
-              {/* ... Assigned Projects Table ... */}
+              {mockProjects.length > 0 ? (
+                <TableContainer>
+                  <Table variant="simple">
+                    <Thead>
+                      <Tr>
+                        <Th>Project</Th>
+                        <Th>Client</Th>
+                        <Th>Progress</Th>
+                        <Th>Status</Th>
+                        <Th>Deadline</Th>
+                        <Th>Action</Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {mockProjects.map(project => (
+                        <Tr key={project.id}>
+                          <Td>
+                            <Text fontWeight="bold">{project.name}</Text>
+                          </Td>
+                          <Td>{project.client}</Td>
+                          <Td>{project.progress}%</Td>
+                          <Td>
+                            <Badge colorScheme={statusColors[project.status]}>
+                              {project.status}
+                            </Badge>
+                          </Td>
+                          <Td>{project.deadline}</Td>
+                          <Td>
+                            <Button
+                              size="sm"
+                              colorScheme="blue"
+                              onClick={() => handleViewProject(project.id)}
+                            >
+                              View
+                            </Button>
+                          </Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                </TableContainer>
+              ) : (
+                <Text>No assigned projects</Text>
+              )}
             </CardBody>
           </Card>
           <Card>
             <CardBody>
-              <TodoList userRole={user?.data?.role} />
+              <TodoList userRole={mockUser.role} />
             </CardBody>
           </Card>
         </SimpleGrid>
@@ -71,3 +170,9 @@ const ProjectLeadDashboard = () => {
 };
 
 export default ProjectLeadDashboard;
+
+export async function getStaticProps() {
+  return {
+    props: {} // Kosongkan karena semua data di-mock di komponen
+  };
+}

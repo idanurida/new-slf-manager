@@ -1,5 +1,5 @@
 // client/src/pages/dashboard/admin-lead/payments/[id].js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Heading,
@@ -18,163 +18,124 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
-  Image
+  Image,
+  SimpleGrid
 } from '@chakra-ui/react';
 import DashboardLayout from '../../../../components/layouts/DashboardLayout';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
 import { useRouter } from 'next/router';
-import { formatCurrency, formatDate } from '../../../../utils/helpers';
+
+// Mock data berdasarkan ID
+const getMockPayment = (id) => {
+  const mockPayments = {
+    '1': {
+      id: '1',
+      amount: 5000000,
+      payment_date: '2023-06-15T10:30:00Z',
+      due_date: '2023-06-30T23:59:59Z',
+      status: 'pending',
+      notes: 'Pembayaran tahap 1',
+      proof_file_path: null,
+      project: {
+        name: 'Mock Project Alpha',
+        owner_name: 'PT. Bangun Jaya'
+      }
+    },
+    '2': {
+      id: '2',
+      amount: 10000000,
+      payment_date: '2023-07-01T14:20:00Z',
+      due_date: '2023-07-15T23:59:59Z',
+      status: 'verified',
+      notes: 'Pembayaran lunas',
+      proof_file_path: 'payment_proof_2.jpg',
+      project: {
+        name: 'Mock Project Beta',
+        owner_name: 'CV. Maju Terus'
+      }
+    }
+  };
+  return mockPayments[id] || null;
+};
+
+// Mock user
+const mockUser = {
+  id: 1,
+  name: 'Admin Lead Mock User',
+  role: 'admin_lead',
+  email: 'admin.lead@example.com'
+};
+
+// Mock format functions
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR'
+  }).format(amount);
+};
+
+const formatDate = (dateString) => {
+  return new Date(dateString).toLocaleDateString('id-ID');
+};
 
 const PaymentDetail = () => {
-  const [user, setUser] = useState({});
+  const router = useRouter();
+  const { id } = router.query;
   const [payment, setPayment] = useState(null);
   const [verificationNotes, setVerificationNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
-  const [loading, setLoading] = useState(false);
   const toast = useToast();
-  const queryClient = useQueryClient();
-  const router = useRouter();
-  const { id } = router.query;
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-
-  const {  userData } = useQuery(
-    'user',
-    async () => {
-      const response = await axios.get('/api/auth/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data.user;
-    },
-    { 
-      enabled: !!token,
-      onSuccess: (data) => setUser(data.user)
-    }
-  );
-
-  const {  paymentData } = useQuery(
-    ['payment', id],
-    async () => {
-      if (!id) return null;
-      const response = await axios.get(`/api/admin/payments/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      return response.data;
-    },
-    { 
-      enabled: !!token && !!id,
-      onSuccess: (data) => {
-        setPayment(data);
-        setVerificationNotes(data.notes || '');
+  useEffect(() => {
+    if (id) {
+      const mockPayment = getMockPayment(id);
+      setPayment(mockPayment);
+      if (mockPayment) {
+        setVerificationNotes(mockPayment.notes || '');
       }
     }
-  );
-
-  const verifyPaymentMutation = useMutation(
-    async ({ paymentId, notes }) => {
-      const response = await axios.put(
-        `/api/admin/payments/${paymentId}/verify`,
-        { notes },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-      return response.data;
-    },
-    {
-      onSuccess: (data) => {
-        toast({
-          title: 'Pembayaran Diverifikasi',
-          description: data.message,
-          status: 'success',
-          duration: 5000,
-          isClosable: true,
-          position: 'top-right'
-        });
-        queryClient.invalidateQueries(['payment', id]);
-        queryClient.invalidateQueries('pending-payments');
-        queryClient.invalidateQueries('admin-stats');
-        router.push('/dashboard/admin-lead');
-      },
-      onError: (error) => {
-        toast({
-          title: 'Error',
-          description: error.response?.data?.error || 'Gagal memverifikasi pembayaran',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-          position: 'top-right'
-        });
-      }
-    }
-  );
-
-  const rejectPaymentMutation = useMutation(
-    async ({ paymentId, rejection_reason, notes }) => {
-      const response = await axios.put(
-        `/api/admin/payments/${paymentId}/reject`,
-        { rejection_reason, notes },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
-      );
-      return response.data;
-    },
-    {
-      onSuccess: (data) => {
-        toast({
-          title: 'Pembayaran Ditolak',
-          description: data.message,
-          status: 'warning',
-          duration: 5000,
-          isClosable: true,
-          position: 'top-right'
-        });
-        queryClient.invalidateQueries(['payment', id]);
-        queryClient.invalidateQueries('pending-payments');
-        queryClient.invalidateQueries('admin-stats');
-        router.push('/dashboard/admin-lead');
-      },
-      onError: (error) => {
-        toast({
-          title: 'Error',
-          description: error.response?.data?.error || 'Gagal menolak pembayaran',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-          position: 'top-right'
-        });
-      }
-    }
-  );
+  }, [id]);
 
   const handleVerifyPayment = () => {
     if (!payment) return;
-    verifyPaymentMutation.mutate({
-      paymentId: payment.id,
-      notes: verificationNotes
+    
+    // Mock verification
+    console.log('Mock verifying payment:', payment.id);
+    toast({
+      title: 'Pembayaran Diverifikasi',
+      description: 'Pembayaran berhasil diverifikasi (mock)',
+      status: 'success',
+      duration: 3000,
+      isClosable: true,
+      position: 'top-right'
     });
+    
+    // Simulate redirect
+    setTimeout(() => {
+      router.push('/dashboard/admin-lead');
+    }, 1500);
   };
 
   const handleRejectPayment = () => {
-    if (!payment || !rejectionReason.trim()) {
+    if (!payment) return;
+    
+    const reason = prompt('Masukkan alasan penolakan:');
+    if (reason) {
+      // Mock rejection
+      console.log('Mock rejecting payment:', payment.id, reason);
       toast({
-        title: 'Error',
-        description: 'Alasan penolakan wajib diisi',
-        status: 'error',
+        title: 'Pembayaran Ditolak',
+        description: 'Pembayaran berhasil ditolak (mock)',
+        status: 'warning',
         duration: 3000,
         isClosable: true,
         position: 'top-right'
       });
-      return;
+      
+      // Simulate redirect
+      setTimeout(() => {
+        router.push('/dashboard/admin-lead');
+      }, 1500);
     }
-    
-    rejectPaymentMutation.mutate({
-      paymentId: payment.id,
-      rejection_reason: rejectionReason,
-      notes: verificationNotes
-    });
   };
 
   const statusColors = {
@@ -183,9 +144,10 @@ const PaymentDetail = () => {
     rejected: 'red'
   };
 
-  if (!payment) {
+  // Handle fallback state
+  if (router.isFallback || !id) {
     return (
-      <DashboardLayout user={user}>
+      <DashboardLayout user={mockUser}>
         <Box p={6}>
           <Text>Loading...</Text>
         </Box>
@@ -193,8 +155,30 @@ const PaymentDetail = () => {
     );
   }
 
+  if (!payment) {
+    return (
+      <DashboardLayout user={mockUser}>
+        <Box p={6}>
+          <Alert status="error">
+            <AlertIcon />
+            <AlertTitle>Pembayaran Tidak Ditemukan</AlertTitle>
+            <AlertDescription>
+              Pembayaran dengan ID {id} tidak ditemukan.
+            </AlertDescription>
+            <Button 
+              mt={4} 
+              onClick={() => router.push('/dashboard/admin-lead')}
+            >
+              Kembali ke Dashboard
+            </Button>
+          </Alert>
+        </Box>
+      </DashboardLayout>
+    );
+  }
+
   return (
-    <DashboardLayout user={user}>
+    <DashboardLayout user={mockUser}>
       <Box p={6}>
         <Heading mb={6} color="blue.600">Detail Pembayaran</Heading>
         
@@ -273,16 +257,7 @@ const PaymentDetail = () => {
               <HStack justifyContent="flex-end" spacing={4}>
                 <Button 
                   colorScheme="red" 
-                  onClick={() => {
-                    if (window.confirm('Apakah Anda yakin ingin menolak pembayaran ini?')) {
-                      const reason = prompt('Masukkan alasan penolakan:');
-                      if (reason) {
-                        setRejectionReason(reason);
-                        handleRejectPayment();
-                      }
-                    }
-                  }}
-                  isDisabled={verifyPaymentMutation.isLoading || rejectPaymentMutation.isLoading}
+                  onClick={handleRejectPayment}
                 >
                   Tolak Pembayaran
                 </Button>
@@ -290,9 +265,6 @@ const PaymentDetail = () => {
                 <Button 
                   colorScheme="green" 
                   onClick={handleVerifyPayment}
-                  isLoading={verifyPaymentMutation.isLoading}
-                  loadingText="Memverifikasi..."
-                  isDisabled={!payment}
                 >
                   Verifikasi Pembayaran
                 </Button>
@@ -317,3 +289,19 @@ const PaymentDetail = () => {
 };
 
 export default PaymentDetail;
+
+export async function getStaticPaths() {
+  return {
+    paths: [
+      { params: { id: '1' } },
+      { params: { id: '2' } },
+    ],
+    fallback: 'blocking'
+  };
+}
+
+export async function getStaticProps() {
+  return {
+    props: {}
+  };
+}

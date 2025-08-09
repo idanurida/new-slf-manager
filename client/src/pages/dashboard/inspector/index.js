@@ -1,3 +1,4 @@
+// src/pages/dashboard/inspector/index.js
 import React from 'react';
 import {
   Box,
@@ -17,66 +18,140 @@ import {
   Td,
   TableContainer,
   Button,
-  Badge,
-  useToast,
-  VStack,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel
+  Badge
 } from '@chakra-ui/react';
 import DashboardLayout from '../../../components/layouts/DashboardLayout';
-import TodoList from '../../../components/dashboard/TodoList';
-import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/router';
-import { authService, inspectionService } from 'services/api';
+
+// Mock data statis untuk testing frontend
+const mockUser = {
+  id: 1,
+  name: 'Inspector Mock User',
+  role: 'inspector',
+  email: 'inspector@example.com'
+};
+
+const mockStats = {
+  totalInspections: 12,
+  pendingInspections: 5,
+  completedInspections: 7,
+  upcomingInspections: 3
+};
+
+const mockPendingInspections = [
+  {
+    id: 1,
+    projectName: 'Project Alpha',
+    client: 'PT. Bangun Jaya',
+    scheduledDate: '2023-06-20T10:00:00Z',
+    location: 'Jakarta',
+    status: 'scheduled'
+  },
+  {
+    id: 2,
+    projectName: 'Project Beta',
+    client: 'CV. Maju Terus',
+    scheduledDate: '2023-06-25T14:00:00Z',
+    location: 'Bandung',
+    status: 'scheduled'
+  }
+];
 
 const InspectorDashboard = () => {
   const router = useRouter();
 
-  const { data: user, isLoading: userLoading } = useQuery('user', authService.getMe);
-  const { data: stats, isLoading: statsLoading } = useQuery('inspectorStats', inspectionService.getStats); // Placeholder
-  const { data: scheduledInspections, isLoading: inspectionsLoading } = useQuery('scheduledInspections', inspectionService.getMyInspections);
+  const handleViewInspection = (inspectionId) => {
+    router.push(`/dashboard/inspector/inspections/${inspectionId}`);
+  };
 
-  const loading = userLoading || statsLoading || inspectionsLoading;
+  const statusColors = {
+    scheduled: 'blue',
+    in_progress: 'orange',
+    completed: 'green',
+    cancelled: 'red'
+  };
 
-  // ... other functions and variables
+  const StatCard = ({ label, value }) => (
+    <Card>
+      <CardBody>
+        <Stat>
+          <StatLabel>{label}</StatLabel>
+          <StatNumber>{value}</StatNumber>
+        </Stat>
+      </CardBody>
+    </Card>
+  );
 
   return (
-    <DashboardLayout user={user?.data}>
+    <DashboardLayout user={mockUser}>
       <Box p={6}>
         <Heading mb={6} color="blue.600">Inspector Dashboard</Heading>
-        
-        <Tabs variant="soft-rounded" colorScheme="blue">
-          <TabList>
-            <Tab>Dashboard</Tab>
-            <Tab>Checklist</Tab> {/* Simplified for this example */}
-          </TabList>
-          <TabPanels>
-            <TabPanel>
-              <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
-                <Card>
-                  <CardBody>
-                    <Heading size="md" mb={4}>Scheduled Inspections</Heading>
-                    {/* ... Scheduled Inspections Table ... */}
-                  </CardBody>
-                </Card>
-                <Card>
-                  <CardBody>
-                    <TodoList userRole={user?.data?.role} />
-                  </CardBody>
-                </Card>
-              </SimpleGrid>
-            </TabPanel>
-            <TabPanel>
-              <Text>Checklist form will be displayed here when an inspection is active.</Text>
-            </TabPanel>
-          </TabPanels>
-        </Tabs>
+
+        <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={8}>
+          <StatCard label="Total Inspections" value={mockStats.totalInspections} />
+          <StatCard label="Pending Inspections" value={mockStats.pendingInspections} />
+          <StatCard label="Completed Inspections" value={mockStats.completedInspections} />
+          <StatCard label="Upcoming Inspections" value={mockStats.upcomingInspections} />
+        </SimpleGrid>
+
+        <Card>
+          <CardBody>
+            <Heading size="md" mb={4}>Pending Inspections</Heading>
+            {mockPendingInspections.length > 0 ? (
+              <TableContainer>
+                <Table variant="simple">
+                  <Thead>
+                    <Tr>
+                      <Th>Project</Th>
+                      <Th>Client</Th>
+                      <Th>Scheduled Date</Th>
+                      <Th>Location</Th>
+                      <Th>Status</Th>
+                      <Th>Action</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {mockPendingInspections.map(inspection => (
+                      <Tr key={inspection.id}>
+                        <Td>
+                          <Text fontWeight="bold">{inspection.projectName}</Text>
+                        </Td>
+                        <Td>{inspection.client}</Td>
+                        <Td>{new Date(inspection.scheduledDate).toLocaleString('id-ID')}</Td>
+                        <Td>{inspection.location}</Td>
+                        <Td>
+                          <Badge colorScheme={statusColors[inspection.status]}>
+                            {inspection.status.replace(/_/g, ' ')}
+                          </Badge>
+                        </Td>
+                        <Td>
+                          <Button
+                            size="sm"
+                            colorScheme="blue"
+                            onClick={() => handleViewInspection(inspection.id)}
+                          >
+                            View
+                          </Button>
+                        </Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <Text>No pending inspections</Text>
+            )}
+          </CardBody>
+        </Card>
       </Box>
     </DashboardLayout>
   );
 };
 
 export default InspectorDashboard;
+
+export async function getStaticProps() {
+  return {
+    props: {} // Kosongkan karena semua data di-mock di komponen
+  };
+}

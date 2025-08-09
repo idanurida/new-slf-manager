@@ -19,11 +19,12 @@ import {
   Button,
   Badge,
   useToast,
-  Skeleton
+  Skeleton,
+  VStack // ✅ Tambahkan VStack ke daftar impor
 } from '@chakra-ui/react';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import DashboardLayout from '../../../components/layouts/DashboardLayout';
+
 
 const HeadConsultantDashboard = () => {
   const [user, setUser] = useState({});
@@ -40,29 +41,60 @@ const HeadConsultantDashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+        // ✅ cek dulu apakah di browser (client-side)
+        if (typeof window === 'undefined') return;
+
         const token = localStorage.getItem('token');
-        if (!token) {
-          window.location.href = '/login';
-          return;
-        }
+        // ✅ untuk mockup, token tidak wajib
+        // if (!token) {
+        //   window.location.href = '/login';
+        //   return;
+        // }
 
-        // Fetch user data
-        const userRes = await axios.get('/api/auth/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setUser(userRes.data.user);
+        // ✅ mock data untuk development/testing
+        const mockUser = {
+          id: 1,
+          name: 'Head Consultant Mock User',
+          role: 'head_consultant',
+          email: 'head.consultant@example.com'
+        };
+        
+        const mockStats = {
+          totalProjects: 18,
+          onProgress: 7,
+          completed: 9,
+          pendingApprovals: 2
+        };
+        
+        const mockApprovals = [
+          {
+            id: 1,
+            project: {
+              name: 'Mock Project Alpha',
+              owner_name: 'Client A'
+            },
+            submitted_by: {
+              name: 'Project Lead 1'
+            },
+            submitted_at: '2023-06-10T10:00:00Z'
+          },
+          {
+            id: 2,
+            project: {
+              name: 'Mock Project Beta',
+              owner_name: 'Client B'
+            },
+            submitted_by: {
+              name: 'Project Lead 2'
+            },
+            submitted_at: '2023-06-12T14:30:00Z'
+          }
+        ];
 
-        // Fetch stats
-        const statsRes = await axios.get('/api/head-consultant/stats', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setStats(statsRes.data);
-
-        // Fetch pending approvals
-        const approvalsRes = await axios.get('/api/head-consultant/pending-approvals', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        setPendingApprovals(approvalsRes.data);
+        // ✅ set mock data
+        setUser(mockUser);
+        setStats(mockStats);
+        setPendingApprovals(mockApprovals);
 
       } catch (error) {
         console.error('Dashboard error:', error);
@@ -82,7 +114,9 @@ const HeadConsultantDashboard = () => {
   }, [toast]);
 
   const handleViewApproval = (approvalId) => {
-    window.location.href = `/dashboard/head-consultant/approvals/${approvalId}`;
+    // ✅ untuk mockup, cukup console log
+    console.log('Viewing approval:', approvalId);
+    // window.location.href = `/dashboard/head-consultant/approvals/${approvalId}`;
   };
 
   if (loading) {
@@ -211,3 +245,10 @@ const HeadConsultantDashboard = () => {
 };
 
 export default HeadConsultantDashboard;
+
+// ✅ INI YANG PENTING: tambahkan di paling bawah
+export async function getStaticProps() {
+  return {
+    props: {} // props kosong untuk mockup
+  };
+}
