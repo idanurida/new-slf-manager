@@ -30,8 +30,13 @@ import {
   TabPanel
 } from '@chakra-ui/react';
 import { ViewIcon, DownloadIcon } from '@chakra-ui/icons';
-// Di src/pages/dashboard/client/index.js
-import DashboardLayout from '../../../components/layouts/DashboardLayout'
+// --- PERBAIKAN PATH IMPOR BERDASARKAN jsconfig.json ---
+// Path relatif sebelumnya: import DashboardLayout from '../../../components/layouts/DashboardLayout'
+// Path absolut berdasarkan konfigurasi:
+// baseUrl: "src"
+// paths: { "components/*": ["components/*"] }
+import DashboardLayout from 'components/layouts/DashboardLayout'; // ✅ Gunakan path absolut
+// -------------------------------------------------------
 import { useRouter } from 'next/router';
 
 // Mock data statis untuk testing frontend
@@ -313,10 +318,13 @@ const ClientDashboard = () => {
   );
 };
 
-export default ClientDashboard;
+// --- PERBAIKAN: Penghapusan getStaticProps karena tidak diperlukan ---
+// Jika Anda membutuhkan data statis dari API di masa depan, Anda bisa menambahkannya kembali di sini.
+// export async function getStaticProps() {
+//   return {
+//     props: {} // Kosongkan karena semua data di-mock di komponen
+//   };
+// }
+// -----------------------------------------------------------------------
 
-export async function getStaticProps() {
-  return {
-    props: {} // Kosongkan karena semua data di-mock di komponen
-  };
-}
+export default ClientDashboard;

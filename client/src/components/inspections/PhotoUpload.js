@@ -19,13 +19,12 @@ import {
   AlertDescription,
   FormControl,
   FormLabel,
-  Select
+  Select,
+  Switch,
+  FormHelperText
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { AttachmentIcon, CloseIcon, CameraIcon } from '@chakra-ui/icons'; // Perbaiki import
-
-// Ganti CameraIcon dengan icon yang tersedia, misalnya menggunakan AttachmentIcon dua kali
-// atau import icon lain yang sesuai dari @chakra-ui/icons
+import { AttachmentIcon, CloseIcon, SmallAddIcon } from '@chakra-ui/icons'; // Ganti icon
 
 const PhotoUpload = ({ onUpload, inspectionId }) => {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -35,6 +34,9 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
   const [error, setError] = useState('');
   const [floorInfo, setFloorInfo] = useState('');
   const [caption, setCaption] = useState('');
+  const [includeLocation, setIncludeLocation] = useState(false); // State untuk toggle geotagging
+  const [location, setLocation] = useState({ latitude: null, longitude: null }); // State untuk koordinat
+  const [locationLoading, setLocationLoading] = useState(false); // State untuk loading lokasi
   const [cameraSupported, setCameraSupported] = useState(false);
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
@@ -42,24 +44,76 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
 
   // Periksa dukungan kamera
   useEffect(() => {
+    // Cek dukungan kamera saat komponen mount (hanya di browser)
     if (typeof window !== 'undefined' && navigator.mediaDevices) {
       navigator.mediaDevices.getUserMedia({ video: true })
         .then(stream => {
+          // Jika berhasil, hentikan stream dan set dukungan kamera
           stream.getTracks().forEach(track => track.stop());
           setCameraSupported(true);
         })
         .catch(err => {
-          console.warn('Kamera tidak didukung:', err);
+          // Jika gagal, kamera tidak didukung atau ditolak
+          console.warn('Kamera tidak didukung atau akses ditolak:', err);
           setCameraSupported(false);
         });
     } else {
       setCameraSupported(false);
     }
-  }, []);
+  }, []); // Hanya dijalankan sekali saat komponen mount
+
+  // Fungsi untuk mendapatkan lokasi (geotagging)
+  const getLocation = () => {
+    // Periksa dukungan geolocation
+    if (!navigator.geolocation) {
+      toast({
+        title: 'Geolocation tidak didukung',
+        description: 'Perangkat Anda tidak mendukung geolocation.',
+        status: 'warning',
+        duration: 5000,
+        isClosable: true,
+        position: 'top-right'
+      });
+      // Kembalikan promise yang resolve dengan lokasi null
+      return Promise.resolve({ latitude: null, longitude: null });
+    }
+
+    // Kembalikan promise untuk mendapatkan lokasi
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // Jika berhasil mendapatkan posisi
+          const { latitude, longitude } = position.coords;
+          setLocation({ latitude, longitude });
+          resolve({ latitude, longitude });
+        },
+        (error) => {
+          // Jika gagal mendapatkan posisi
+          console.error('Error getting location:', error);
+          toast({
+            title: 'Gagal mendapatkan lokasi',
+            description: `Error: ${error.message}. Geotagging akan dilewati.`,
+            status: 'warning',
+            duration: 5000,
+            isClosable: true,
+            position: 'top-right'
+          });
+          // Resolve dengan null jika gagal
+          resolve({ latitude: null, longitude: null });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000, // 10 detik timeout
+          maximumAge: 300000 // Gunakan cache maksimal 5 menit
+        }
+      );
+    });
+  };
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validasi file
       if (!file.type.startsWith('image/')) {
         setError('File harus berupa gambar (JPEG, PNG, GIF, dll)');
         toast({
@@ -73,7 +127,7 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
         return;
       }
       
-      if (file.size > 10 * 1024 * 1024) {
+      if (file.size > 10 * 1024 * 1024) { // 10MB
         setError('Ukuran file terlalu besar (maksimal 10MB)');
         toast({
           title: 'File terlalu besar',
@@ -93,10 +147,11 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
   };
 
   const handleTakePhoto = async () => {
+    // Periksa dukungan kamera sebelum mencoba mengakses
     if (!cameraSupported) {
       toast({
         title: 'Kamera tidak didukung',
-        description: 'Perangkat Anda tidak mendukung akses kamera.',
+        description: 'Perangkat Anda tidak mendukung akses kamera atau izin ditolak.',
         status: 'warning',
         duration: 5000,
         isClosable: true,
@@ -106,11 +161,13 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
     }
 
     try {
+      // Akses kamera
       const stream = await navigator.mediaDevices.getUserMedia({ video: true });
       const video = document.createElement('video');
       video.srcObject = stream;
       await video.play();
 
+      // Tunggu beberapa detik untuk kamera siap
       setTimeout(() => {
         const canvas = document.createElement('canvas');
         canvas.width = video.videoWidth;
@@ -120,6 +177,7 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
         
         canvas.toBlob((blob) => {
           if (blob) {
+            // Buat file dari blob
             const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
             setSelectedFile(file);
             setPreviewUrl(URL.createObjectURL(file));
@@ -135,13 +193,14 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
           }
         }, 'image/jpeg', 0.95);
         
+        // Hentikan stream kamera
         stream.getTracks().forEach(track => track.stop());
       }, 1000);
     } catch (err) {
       console.error('Error accessing camera:', err);
       toast({
         title: 'Error',
-        description: 'Gagal mengakses kamera.',
+        description: 'Gagal mengakses kamera. Silakan pilih file dari galeri.',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -180,6 +239,19 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
     setError('');
 
     try {
+      let locationData = { latitude: null, longitude: null };
+      
+      // Jika toggle geotagging diaktifkan, dapatkan lokasi
+      if (includeLocation) {
+        setLocationLoading(true);
+        try {
+          locationData = await getLocation();
+        } finally {
+          setLocationLoading(false);
+        }
+      }
+
+      // Simulasi progress upload
       const interval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 90) {
@@ -191,29 +263,38 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
       }, 200);
 
       try {
+        // Panggil fungsi upload dari parent component dengan data lengkap
         await onUpload({
           photo: selectedFile,
           floor_info: floorInfo,
-          caption: caption
+          caption: caption,
+          latitude: locationData.latitude,   // Sertakan latitude
+          longitude: locationData.longitude  // Sertakan longitude
         });
 
+        // Hentikan interval dan set progress ke 100
         clearInterval(interval);
         setProgress(100);
         
         toast({
           title: 'Foto berhasil diunggah',
-          description: 'Foto telah berhasil diunggah (Mock).',
+          description: includeLocation && locationData.latitude && locationData.longitude 
+            ? `Foto dengan lokasi (${locationData.latitude.toFixed(6)}, ${locationData.longitude.toFixed(6)}) berhasil diunggah (Mock).`
+            : 'Foto telah berhasil diunggah (Mock).',
           status: 'success',
           duration: 3000,
           isClosable: true,
           position: 'top-right'
         });
         
+        // Reset form setelah delay kecil untuk menunjukkan progress 100%
         setTimeout(() => {
           setSelectedFile(null);
           setPreviewUrl('');
           setFloorInfo('');
           setCaption('');
+          setIncludeLocation(false);
+          setLocation({ latitude: null, longitude: null });
           setProgress(0);
           if (fileInputRef.current) {
             fileInputRef.current.value = '';
@@ -221,7 +302,7 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
         }, 500);
       } catch (uploadError) {
         clearInterval(interval);
-        throw uploadError;
+        throw uploadError; // Lempar ulang error untuk ditangkap oleh blok catch luar
       }
 
     } catch (error) {
@@ -241,6 +322,7 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
   };
 
   const handleRemoveFile = () => {
+    // Cabut URL object untuk mencegah kebocoran memori
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
@@ -249,11 +331,14 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
     setError('');
     setFloorInfo('');
     setCaption('');
+    setIncludeLocation(false);
+    setLocation({ latitude: null, longitude: null });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
 
+  // Bersihkan URL object ketika komponen unmount atau previewUrl berubah
   useEffect(() => {
     return () => {
       if (previewUrl) {
@@ -298,6 +383,20 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
               />
             </FormControl>
 
+            {/* Toggle untuk Geotagging */}
+            <FormControl display="flex" alignItems="center">
+              <FormLabel htmlFor="geotag-switch" mb="0">
+                Sertakan Lokasi (Geotagging)
+              </FormLabel>
+              <Switch
+                id="geotag-switch"
+                isChecked={includeLocation}
+                onChange={(e) => setIncludeLocation(e.target.checked)}
+                isDisabled={locationLoading || uploading}
+              />
+              <FormHelperText ml={2}>(Opsional)</FormHelperText>
+            </FormControl>
+
             <Input
               ref={fileInputRef}
               type="file"
@@ -329,7 +428,7 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
               {cameraSupported && (
                 <Button
                   onClick={handleTakePhoto}
-                  leftIcon={<AttachmentIcon />} // Gunakan icon yang sama atau sesuaikan
+                  leftIcon={<SmallAddIcon />} 
                   colorScheme="green"
                   variant="outline"
                   isDisabled={uploading}
@@ -374,11 +473,23 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
             
             {uploading && (
               <VStack spacing={3} w="100%">
-                <Text fontSize="sm" color="blue.600">Mengunggah...</Text>
-                <Progress value={progress} size="sm" colorScheme="blue" w="100%" hasStripe isAnimated />
-                <Text fontSize="xs" color="gray.500">
-                  {progress}% complete
+                <Text fontSize="sm" color="blue.600">
+                  {locationLoading ? "Mendapatkan lokasi..." : "Mengunggah..."}
                 </Text>
+                <Progress 
+                  value={locationLoading ? undefined : progress} 
+                  size="sm" 
+                  colorScheme="blue" 
+                  w="100%" 
+                  hasStripe 
+                  isAnimated 
+                  isIndeterminate={locationLoading} // Tampilkan indikator loading tak tentu saat mendapat lokasi
+                />
+                {!locationLoading && (
+                  <Text fontSize="xs" color="gray.500">
+                    {progress}% complete
+                  </Text>
+                )}
               </VStack>
             )}
             
@@ -386,8 +497,8 @@ const PhotoUpload = ({ onUpload, inspectionId }) => {
               <Button
                 onClick={handleUpload}
                 colorScheme="green"
-                isLoading={uploading}
-                loadingText="Mengunggah"
+                isLoading={uploading || locationLoading}
+                loadingText={locationLoading ? "Mendapatkan lokasi..." : "Mengunggah"}
                 isDisabled={!selectedFile || uploading}
                 size="sm"
               >
