@@ -21,11 +21,27 @@ import {
   FormErrorMessage,
   Skeleton
 } from '@chakra-ui/react';
+// Import motion dengan penanganan error yang lebih aman
 import { motion } from 'framer-motion';
-// Hapus axios karena tidak digunakan langsung
-// import axios from 'axios';
 
-const DynamicChecklistForm = ({ checklistItem, onSave, defaultSampleNumber = '' }) => {
+// Fallback untuk motion jika framer-motion tidak tersedia
+const MotionBox = motion?.Box || Box;
+const MotionDiv = motion?.div || 'div';
+const MotionCard = motion?.Card || Card;
+const MotionStack = motion?.Stack || Stack;
+const MotionVStack = motion?.VStack || VStack;
+const MotionHStack = motion?.HStack || HStack;
+
+// Mock data default untuk checklistItem jika tidak diberikan
+const DEFAULT_CHECKLIST_ITEM = {
+  id: 0,
+  code: 'DEFAULT-CODE',
+  description: 'Default Checklist Item',
+  category: 'default',
+  column_config: []
+};
+
+const DynamicChecklistForm = ({ checklistItem = DEFAULT_CHECKLIST_ITEM, onSave, defaultSampleNumber = '' }) => {
   const [sampleNumber, setSampleNumber] = useState(defaultSampleNumber);
   const [responses, setResponses] = useState({});
   const [loading, setLoading] = useState(false);
@@ -59,7 +75,7 @@ const DynamicChecklistForm = ({ checklistItem, onSave, defaultSampleNumber = '' 
       }
 
       // Validate responses based on column_config
-      if (checklistItem.column_config) {
+      if (checklistItem?.column_config) {
         checklistItem.column_config.forEach(column => {
           const value = responses[column.name];
           if (!value && column.required) {
@@ -150,7 +166,7 @@ const DynamicChecklistForm = ({ checklistItem, onSave, defaultSampleNumber = '' 
 
   // Render dynamic columns based on column_config
   const renderColumns = () => {
-    if (!checklistItem.column_config || checklistItem.column_config.length === 0) {
+    if (!checklistItem?.column_config || checklistItem.column_config.length === 0) {
       return (
         <Text color="orange.500" fontSize="sm">
           ⚠️ No column configuration found for this checklist item (Mock)
@@ -165,7 +181,7 @@ const DynamicChecklistForm = ({ checklistItem, onSave, defaultSampleNumber = '' 
       switch (type) {
         case 'radio':
           return (
-            <motion.div
+            <MotionDiv
               key={name}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -187,7 +203,7 @@ const DynamicChecklistForm = ({ checklistItem, onSave, defaultSampleNumber = '' 
                 </RadioGroup>
                 <FormErrorMessage>{errors[name]}</FormErrorMessage>
               </FormControl>
-            </motion.div>
+            </MotionDiv>
           );
 
         case 'radio_with_text':
@@ -195,7 +211,7 @@ const DynamicChecklistForm = ({ checklistItem, onSave, defaultSampleNumber = '' 
           // Pastikan value selalu array [radioValue, textValue]
           const [radioVal, textVal = ''] = Array.isArray(value) ? value : [value, ''];
           return (
-            <motion.div
+            <MotionDiv
               key={name}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -219,7 +235,7 @@ const DynamicChecklistForm = ({ checklistItem, onSave, defaultSampleNumber = '' 
               </FormControl>
               
               {radioVal === 'Tidak Sesuai' && (
-                <motion.div
+                <MotionDiv
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   transition={{ duration: 0.3 }}
@@ -235,14 +251,14 @@ const DynamicChecklistForm = ({ checklistItem, onSave, defaultSampleNumber = '' 
                     />
                     <FormErrorMessage>{errors[`${name}_text`]}</FormErrorMessage>
                   </FormControl>
-                </motion.div>
+                </MotionDiv>
               )}
-            </motion.div>
+            </MotionDiv>
           );
 
         case 'input_number':
           return (
-            <motion.div
+            <MotionDiv
               key={name}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -261,12 +277,12 @@ const DynamicChecklistForm = ({ checklistItem, onSave, defaultSampleNumber = '' 
                 />
                 <FormErrorMessage>{errors[name]}</FormErrorMessage>
               </FormControl>
-            </motion.div>
+            </MotionDiv>
           );
 
         case 'textarea':
           return (
-            <motion.div
+            <MotionDiv
               key={name}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -283,13 +299,13 @@ const DynamicChecklistForm = ({ checklistItem, onSave, defaultSampleNumber = '' 
                 />
                 <FormErrorMessage>{errors[name]}</FormErrorMessage>
               </FormControl>
-            </motion.div>
+            </MotionDiv>
           );
 
         default:
           // Fallback for unknown column types
           return (
-            <motion.div
+            <MotionDiv
               key={name}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -307,37 +323,37 @@ const DynamicChecklistForm = ({ checklistItem, onSave, defaultSampleNumber = '' 
                 />
                 <FormErrorMessage>{errors[name]}</FormErrorMessage>
               </FormControl>
-            </motion.div>
+            </MotionDiv>
           );
       }
     });
   };
 
   return (
-    <motion.div
+    <MotionDiv
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <Card
-        as={motion.div}
+      <MotionCard
+        as={MotionDiv}
         whileHover={{ boxShadow: 'lg' }}
         transition={{ duration: 0.2 }}
         variant="outline"
         borderRadius="lg"
       >
         <CardBody>
-          <VStack spacing={4} align="stretch">
+          <MotionVStack spacing={4} align="stretch">
             {/* Header Item */}
             <Box>
               <Heading size="sm" color="blue.600">
-                {checklistItem.code} (Mock)
+                {checklistItem?.code || 'DEFAULT-CODE'} (Mock)
               </Heading>
               <Text fontSize="md" fontWeight="semibold" mt={1}>
-                {checklistItem.description} (Mock)
+                {checklistItem?.description || 'Default Checklist Item'} (Mock)
               </Text>
               <Text fontSize="xs" color="gray.500">
-                Kategori: {checklistItem.category} (Mock)
+                Kategori: {checklistItem?.category || 'default'} (Mock)
               </Text>
             </Box>
 
@@ -345,7 +361,7 @@ const DynamicChecklistForm = ({ checklistItem, onSave, defaultSampleNumber = '' 
 
             {/* Form */}
             <form onSubmit={handleSubmit}>
-              <VStack spacing={5} align="stretch">
+              <MotionVStack spacing={5} align="stretch">
                 {/* Input Sample Number */}
                 <FormControl isRequired isInvalid={!!errors.sampleNumber}>
                   <FormLabel fontSize="sm" fontWeight="medium">Nomor Sampel (Mock)</FormLabel>
@@ -363,7 +379,7 @@ const DynamicChecklistForm = ({ checklistItem, onSave, defaultSampleNumber = '' 
                 {renderColumns()}
 
                 {/* Tombol Submit */}
-                <HStack justifyContent="flex-end" pt={2}>
+                <MotionHStack justifyContent="flex-end" pt={2}>
                   <Button
                     type="submit"
                     colorScheme="blue"
@@ -374,13 +390,13 @@ const DynamicChecklistForm = ({ checklistItem, onSave, defaultSampleNumber = '' 
                   >
                     Simpan Respons (Mock)
                   </Button>
-                </HStack>
-              </VStack>
+                </MotionHStack>
+              </MotionVStack>
             </form>
-          </VStack>
+          </MotionVStack>
         </CardBody>
-      </Card>
-    </motion.div>
+      </MotionCard>
+    </MotionDiv>
   );
 };
 
