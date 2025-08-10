@@ -1,4 +1,5 @@
 // client/src/components/layouts/DashboardLayout.js
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Flex,
@@ -8,7 +9,6 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
-  MenuDivider,
   IconButton,
   useDisclosure,
   Drawer,
@@ -18,98 +18,69 @@ import {
   DrawerContent,
   DrawerCloseButton,
   Button,
-  VStack,
   HStack,
-  useToast // Tambahkan useToast untuk debugging jika diperlukan
+  VStack,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  useToast
 } from '@chakra-ui/react';
 import { HamburgerIcon, ChevronDownIcon } from '@chakra-ui/icons';
 import { useRouter } from 'next/router';
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiHome, FiFolder, FiUsers, FiFileText, FiCheckCircle, FiUser, FiFile, FiBarChart2, FiDollarSign } from 'react-icons/fi';
 
-const MotionBox = motion(Box);
-const MotionFlex = motion(Flex);
-
-// Fungsi utilitas untuk mengekstrak role dari token mock
-const extractRoleFromMockToken = (token) => {
-  if (!token || !token.startsWith('mock-jwt-')) {
-    console.warn('Token tidak valid atau tidak sesuai format mock:', token);
-    return null;
+// Mock data statis untuk testing frontend
+const mockUsers = {
+  superadmin: {
+    id: 1,
+    name: 'Super Admin Mock User',
+    role: 'superadmin',
+    email: 'superadmin@example.com'
+  },
+  head_consultant: {
+    id: 2,
+    name: 'Head Consultant Mock User',
+    role: 'head_consultant',
+    email: 'headconsultant@example.com'
+  },
+  project_lead: {
+    id: 3,
+    name: 'Project Lead Mock User',
+    role: 'project_lead',
+    email: 'projectlead@example.com'
+  },
+  admin_lead: {
+    id: 4,
+    name: 'Admin Lead Mock User',
+    role: 'admin_lead',
+    email: 'adminlead@example.com'
+  },
+  inspector: {
+    id: 5,
+    name: 'Inspector Mock User',
+    role: 'inspector',
+    email: 'inspector@example.com'
+  },
+  drafter: {
+    id: 6,
+    name: 'Drafter Mock User',
+    role: 'drafter',
+    email: 'drafter@example.com'
+  },
+  client: {
+    id: 7,
+    name: 'Client Mock User',
+    role: 'client',
+    email: 'client@example.com'
   }
-  // Ubah 'mock-jwt-project_lead' menjadi 'project_lead'
-  const extractedRole = token.replace('mock-jwt-', '').toLowerCase();
-  console.log(`[Mock Auth] Role diekstrak dari token: ${extractedRole}`);
-  return extractedRole;
-};
-
-// Mock user data untuk frontend testing
-const getMockUserByRole = (role) => {
-  console.log(`[Mock Auth] Mencari mock user untuk role: ${role}`);
-  const mockUsers = {
-    superadmin: {
-      id: 1,
-      name: 'Super Admin Mock',
-      email: 'superadmin@mock.com',
-      role: 'superadmin',
-      avatar: null
-    },
-    head_consultant: {
-      id: 7,
-      name: 'Head Consultant Mock',
-      email: 'head.consultant@mock.com',
-      role: 'head_consultant',
-      avatar: null
-    },
-    project_lead: {
-      id: 2,
-      name: 'Project Lead Mock',
-      email: 'project.lead@mock.com',
-      role: 'project_lead',
-      avatar: null
-    },
-    admin_lead: {
-      id: 3,
-      name: 'Admin Lead Mock',
-      email: 'admin.lead@mock.com',
-      role: 'admin_lead',
-      avatar: null
-    },
-    inspector: {
-      id: 4,
-      name: 'Inspector Mock',
-      email: 'inspector@mock.com',
-      role: 'inspector',
-      avatar: null
-    },
-    drafter: {
-      id: 5,
-      name: 'Drafter Mock',
-      email: 'drafter@mock.com',
-      role: 'drafter',
-      avatar: null
-    },
-    client: {
-      id: 6,
-      name: 'Client Mock',
-      email: 'client@mock.com',
-      role: 'client',
-      avatar: null
-    }
-  };
-  
-  const user = mockUsers[role] || mockUsers.project_lead; // Default ke project_lead jika role tidak ditemukan
-  console.log(`[Mock Auth] Mock user ditemukan:`, user);
-  return user;
 };
 
 const DashboardLayout = ({ children, user }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(user || null);
-  const toast = useToast(); // Untuk debugging jika diperlukan
+  const toast = useToast();
 
-  // Untuk frontend testing, kita akan menggunakan mock user data
   useEffect(() => {
     console.log('[DashboardLayout] useEffect dipicu');
     
@@ -123,7 +94,7 @@ const DashboardLayout = ({ children, user }) => {
     // Jika kita sedang di server-side (SSR), gunakan default mock user
     if (typeof window === 'undefined') {
       console.log('[DashboardLayout] SSR: Menggunakan user default project_lead');
-      setCurrentUser(getMockUserByRole('project_lead'));
+      setCurrentUser(mockUsers.project_lead);
       return;
     }
 
@@ -135,7 +106,7 @@ const DashboardLayout = ({ children, user }) => {
       const storedRole = localStorage.getItem('mockUserRole');
       console.log('[DashboardLayout] Role dari mockUserRole:', storedRole);
       if (storedRole) {
-        const mockUserForRole = getMockUserByRole(storedRole);
+        const mockUserForRole = mockUsers[storedRole];
         console.log('[DashboardLayout] User mock untuk role ditemukan:', mockUserForRole);
         setCurrentUser(mockUserForRole);
         return;
@@ -150,7 +121,7 @@ const DashboardLayout = ({ children, user }) => {
         if (roleFromToken) {
           // Simpan role yang diekstrak untuk penggunaan berikutnya
           localStorage.setItem('mockUserRole', roleFromToken);
-          const mockUserForRole = getMockUserByRole(roleFromToken);
+          const mockUserForRole = mockUsers[roleFromToken];
           console.log('[DashboardLayout] User mock untuk role dari token:', mockUserForRole);
           setCurrentUser(mockUserForRole);
           return;
@@ -159,11 +130,11 @@ const DashboardLayout = ({ children, user }) => {
 
       // 3. Jika tidak ada token atau role, gunakan default
       console.log('[DashboardLayout] Tidak ada info role ditemukan, menggunakan default project_lead');
-      setCurrentUser(getMockUserByRole('project_lead'));
+      setCurrentUser(mockUsers.project_lead);
     } catch (error) {
       console.error('[DashboardLayout] Error determining mock user role:', error);
       // Gunakan default jika terjadi error
-      setCurrentUser(getMockUserByRole('project_lead'));
+      setCurrentUser(mockUsers.project_lead);
     }
   }, [user]); // Bergantung pada prop `user`
 
@@ -180,97 +151,24 @@ const DashboardLayout = ({ children, user }) => {
     router.push('/login');
   };
 
-  const getSidebarItems = () => {
-    // Pastikan currentUser ada sebelum mengakses properti `role`
-    const role = currentUser?.role;
-    console.log(`[Navigation] Membuat sidebar items untuk role: ${role}`);
-    
-    const items = {
-      superadmin: [
-        { name: 'Dashboard', path: '/dashboard/superadmin', icon: <FiHome /> },
-        { name: 'Users', path: '/dashboard/superadmin/users', icon: <FiUsers /> },
-        { name: 'Projects', path: '/dashboard/superadmin/projects', icon: <FiFolder /> },
-        { name: 'Regulations', path: '/dashboard/superadmin/regulations', icon: <FiFileText /> }
-      ],
-      head_consultant: [
-        { name: 'Dashboard', path: '/dashboard/head-consultant', icon: <FiHome /> },
-        { name: 'Projects', path: '/dashboard/head-consultant/projects', icon: <FiFolder /> },
-        { name: 'Approvals', path: '/dashboard/head-consultant/approvals', icon: <FiCheckCircle /> }
-      ],
-      project_lead: [
-        { name: 'Dashboard', path: '/dashboard/project-lead', icon: <FiHome /> },
-        { name: 'My Projects', path: '/dashboard/projects', icon: <FiFolder /> },
-        { name: 'Inspections', path: '/dashboard/project-lead/inspections', icon: <FiCheckCircle /> }
-      ],
-      admin_lead: [
-        { name: 'Dashboard', path: '/dashboard/admin-lead', icon: <FiHome /> },
-        { name: 'Projects', path: '/dashboard/projects', icon: <FiFolder /> },
-        { name: 'Payments', path: '/dashboard/admin-lead/payments', icon: <FiDollarSign /> },
-        { name: 'Documents', path: '/dashboard/admin-lead/documents', icon: <FiFile /> }
-      ],
-      inspector: [
-        { name: 'Dashboard', path: '/dashboard/inspector', icon: <FiHome /> },
-        { name: 'My Inspections', path: '/dashboard/inspector/inspections', icon: <FiCheckCircle /> },
-        { name: 'Checklists', path: '/dashboard/inspector/checklists', icon: <FiFileText /> }
-      ],
-      drafter: [
-        { name: 'Dashboard', path: '/dashboard/drafter', icon: <FiHome /> },
-        { name: 'Reports', path: '/dashboard/drafter/reports', icon: <FiFileText /> }
-      ],
-      client: [
-        { name: 'Dashboard', path: '/dashboard/client', icon: <FiHome /> },
-        { name: 'My Projects', path: '/dashboard/client/projects', icon: <FiFolder /> },
-        { name: 'Documents', path: '/dashboard/client/documents', icon: <FiFile /> }
-      ]
-    };
-    
-    // Kembalikan item berdasarkan role, atau array kosong jika role tidak ditemukan
-    const selectedItems = items[role] || [];
-    console.log(`[Navigation] Items sidebar yang dipilih:`, selectedItems);
-    return selectedItems;
-  };
-
   const SidebarContent = () => (
-    <VStack align="stretch" spacing={1}>
-      {getSidebarItems().map((item) => (
-        <MotionBox
-          key={item.path}
-          as="button"
-          display="flex"
-          alignItems="center"
-          gap={3}
-          px={4}
-          py={3}
-          borderRadius="md"
-          fontWeight="medium"
-          bg={router.pathname === item.path ? 'blue.600' : 'transparent'}
-          color={router.pathname === item.path ? 'white' : 'gray.200'}
-          _hover={{ bg: router.pathname === item.path ? 'blue.600' : 'rgba(255,255,255,0.08)' }}
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.2 }}
-          onClick={() => {
-            console.log(`[Navigation] Navigasi ke: ${item.path}`);
-            router.push(item.path);
-          }}
-        >
-          {item.icon}
-          <Text>{item.name}</Text>
-        </MotionBox>
-      ))}
+    <VStack align="stretch">
+      {/* Navigasi berdasarkan role */}
+      {currentUser?.role === 'inspector' && (
+        <HStack spacing={2}>
+          <Text fontWeight="bold">Inspector Dashboard</Text>
+          <Text fontSize="sm">(Mock)</Text>
+        </HStack>
+      )}
+      {currentUser?.role === 'project_lead' && (
+        <HStack spacing={2}>
+          <Text fontWeight="bold">Project Lead Dashboard</Text>
+          <Text fontSize="sm">(Mock)</Text>
+        </HStack>
+      )}
+      {/* ... tambahkan navigasi untuk role lainnya */}
     </VStack>
   );
-
-  // Tampilkan loading state sederhana jika currentUser belum siap
-  // Ini penting untuk memastikan sidebar items dibuat dengan role yang benar
-  if (!currentUser) {
-    console.log('[DashboardLayout] Menampilkan state loading karena currentUser belum tersedia');
-    return (
-      <Flex h="100vh" justify="center" align="center">
-        <Text>Loading dashboard...</Text>
-      </Flex>
-    );
-  }
 
   return (
     <Flex h="100vh" direction="column">
@@ -298,7 +196,7 @@ const DashboardLayout = ({ children, user }) => {
           flexDirection="column"
           p={4}
         >
-          <Text fontSize="xl" fontWeight="bold" mb={6} color="blue.300">
+          <Text fontSize="xl" fontWeight="bold" mb={6} color="blue.600">
             SLF One Manager
           </Text>
           <SidebarContent />
@@ -355,7 +253,7 @@ const DashboardLayout = ({ children, user }) => {
           <Box flex={1} overflow="auto" p={{ base: 4, md: 6 }} bg="gray.50">
             <AnimatePresence mode="wait">
               <MotionBox
-                key={router.pathname}
+                key={router.asPath}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}

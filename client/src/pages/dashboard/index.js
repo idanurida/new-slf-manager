@@ -6,54 +6,92 @@ const DashboardRedirect = () => {
   const router = useRouter();
 
   useEffect(() => {
-    // Untuk testing frontend tanpa API nyata, gunakan mock role
-    const mockRedirect = () => {
-      // Mock role untuk testing - bisa diubah sesuai kebutuhan
-      const mockRole = 'project_lead'; // atau 'admin_lead', 'superadmin', dll
-      
+    // Fungsi untuk mendeteksi role dari localStorage (mock)
+    const detectRoleAndRedirect = () => {
+      // Cek apakah kode dijalankan di browser
+      if (typeof window === 'undefined') {
+         console.log("Masih di server side, menunggu client...");
+         return;
+      }
+
+      console.log("Mendeteksi role di client side...");
+      // Coba dapatkan role yang disimpan secara eksplisit
+      let mockRole = localStorage.getItem('mockUserRole');
+      console.log("Role dari mockUserRole:", mockRole);
+
+      // Jika tidak ada, coba ekstrak dari token
+      if (!mockRole) {
+        const token = localStorage.getItem('token');
+        console.log("Token ditemukan:", token);
+        if (token && token.startsWith('mock-jwt-')) {
+          // Ekstrak role dari token, misal 'mock-jwt-superadmin' menjadi 'superadmin'
+          mockRole = token.replace('mock-jwt-', '');
+          console.log("Role diekstrak dari token:", mockRole);
+        }
+      }
+
+      // Jika masih tidak ada, gunakan default
+      if (!mockRole) {
+         mockRole = 'project_lead'; // Default fallback
+         console.log("Tidak ada role ditemukan, menggunakan default:", mockRole);
+      }
+
+      // Normalisasi role jika perlu (pastikan sesuai dengan case di switch)
+      // Misalnya, jika Anda menyimpan 'superadmin' tapi switch case menunggu 'super_admin'
+      // mockRole = mockRole.replace('-', '_'); 
+
+      // Redirect berdasarkan role yang terdeteksi
+      let redirectPath = '/dashboard/project-lead'; // Default
       switch (mockRole) {
         case 'superadmin':
-          router.push('/dashboard/superadmin');
+          redirectPath = '/dashboard/superadmin';
           break;
         case 'head_consultant':
-          router.push('/dashboard/head-consultant');
+          redirectPath = '/dashboard/head-consultant';
           break;
         case 'project_lead':
-          router.push('/dashboard/project-lead');
+          redirectPath = '/dashboard/project-lead';
           break;
         case 'admin_lead':
-          router.push('/dashboard/admin-lead');
+          redirectPath = '/dashboard/admin-lead';
           break;
         case 'inspector':
-          router.push('/dashboard/inspector');
+          redirectPath = '/dashboard/inspector';
           break;
         case 'drafter':
-          router.push('/dashboard/drafter');
+          redirectPath = '/dashboard/drafter';
           break;
         case 'client':
-          router.push('/dashboard/client');
+          redirectPath = '/dashboard/client';
           break;
         default:
-          router.push('/dashboard/project-lead'); // default mock dashboard
+          console.warn("Role tidak dikenali:", mockRole, ". Mengarahkan ke default.");
+          // Biarkan redirectPath ke default
       }
+
+      console.log(`Mengarahkan ke: ${redirectPath} untuk role: ${mockRole}`);
+      router.push(redirectPath);
     };
 
-    // Simulasi delay kecil untuk efek redirect
-    const timer = setTimeout(() => {
-      mockRedirect();
-    }, 100);
+    // Panggil fungsi deteksi
+    detectRoleAndRedirect();
 
-    return () => clearTimeout(timer);
-  }, [router]);
+  }, [router]); // Ketergantungan useEffect
 
+  // Tampilan sementara saat redirect
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-      <p>Redirecting to mock dashboard...</p>
+      <p>Mendeteksi role dan mengarahkan ke dashboard Anda...</p>
     </div>
   );
 };
 
 export default DashboardRedirect;
 
-// Untuk testing frontend, tidak perlu getStaticProps karena redirect dilakukan client-side
-// Halaman ini bergantung pada client-side logic dan tidak cocok untuk static generation
+// Karena logika utama di client-side, tidak perlu getStaticProps
+// atau gunakan yang sangat sederhana jika diperlukan framework
+export async function getStaticProps() {
+  return {
+    props: {} // Atau hapus fungsi ini sepenuhnya
+  };
+}
